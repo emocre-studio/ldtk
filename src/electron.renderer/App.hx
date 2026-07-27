@@ -58,7 +58,7 @@ class App extends dn.Process {
 		LOG.add("BOOT","ExePath: "+JsTools.getExeDir());
 		LOG.add("BOOT","Assets: "+JsTools.getAssetsDir());
 		LOG.add("BOOT","ExtraFiles: "+JsTools.getExtraFilesDir());
-		LOG.add("BOOT","CWD: "+Sys.getCwd());
+		LOG.add("BOOT","CWD: "+ #if web js.Browser.location.href #else Sys.getCwd() #end);
 		LOG.add("BOOT","Display: "+ET.getScreenWidth()+"x"+ET.getScreenHeight());
 
 		// App arguments

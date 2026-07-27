@@ -1,4 +1,6 @@
+#if !web
 import electron.renderer.IpcRenderer;
+#end
 #if editor
 import EditorTypes;
 #end
