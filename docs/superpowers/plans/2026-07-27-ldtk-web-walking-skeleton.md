@@ -11,7 +11,8 @@
 ## Global Constraints
 
 - Alvo Haxe: JS. O build web **mantém** `-lib electron -lib hxnodejs` no classpath (para compilar), e **neutraliza as chamadas de runtime** de node/electron via `#if web`. A remoção real dessas libs é trabalho posterior (issues #10/#11), fora deste plano.
-- Todo código web novo vive em `src/electron.renderer/web/`.
+- Todo código web novo vive em **`srcweb/web/`** (uma raiz de classpath separada, adicionada via `-cp srcweb`). **Desvio do plano original** (`src/electron.renderer/web/`): descobrimos que o `import.hx` do editor **cascateia e stacka** no subpacote `web`, arrastando jQuery/hxd/App para os shims. Mantê-los fora de `src/electron.renderer` isola-os desse `import.hx`. O editor referencia `web.*` por pacote (independente da localização física).
+- Teste interp do `VirtualFS`: `test/webtest/VirtualFSTest.hx` (pacote `webtest`, para não herdar `import.hx` do root), rodado com `haxe -cp srcweb -cp test -main webtest.VirtualFSTest --interp`.
 - **Não existe harness de teste Haxe no projeto.** Verificação = (a) `haxe renderer.web.hxml` compila limpo; (b) checagem **manual no navegador** contra o servidor da peça 1 rodando; (c) lógica pura do `VirtualFS` testada via `haxe --interp`.
 - `import.hx` troca, sob `#if web`, `dn.js.NodeTools as NT` → `web.WebFS as NT` e `dn.js.ElectronTools as ET` → `web.WebElectronTools as ET`.
 - Formato do bundle do servidor: `{ version:String, manifest:Object, levels:{<iid>:Object}, images:[{id,name,url,pxWid,pxHei}] }` (ver `server/README.md`).
