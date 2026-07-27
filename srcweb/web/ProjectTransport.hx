@@ -110,6 +110,26 @@ class ProjectTransport {
 		sendJson("PUT", base + "/manifest", manifestJson, (_) -> runLevels(0), onError);
 	}
 
+	public static function uploadImage(bytes:haxe.io.Bytes, name:String,
+		onOk:(img:{id:String,name:String,url:String,pxWid:Int,pxHei:Int})->Void, onError:String->Void) : Void {
+		var form = new js.html.FormData();
+		var arr = new js.lib.Uint8Array(bytes.getData());
+		var blob = new js.html.Blob([arr]);
+		form.append("file", blob, name);
+		var xhr = new js.html.XMLHttpRequest();
+		xhr.open("POST", apiBaseUrl + "/api/project/" + projectId + "/images", true);
+		xhr.onreadystatechange = function() {
+			if( xhr.readyState!=4 ) return;
+			if( xhr.status<200 || xhr.status>=300 ) { onError('HTTP ${xhr.status} no upload'); return; }
+			try {
+				var r = haxe.Json.parse(xhr.responseText);
+				onOk({ id:Std.string(r.id), name:Std.string(r.name), url:Std.string(r.url), pxWid:r.pxWid, pxHei:r.pxHei });
+			} catch(e:Dynamic) { onError("Resposta de upload inválida: "+Std.string(e)); }
+		}
+		xhr.onerror = function(_) onError("Erro de rede no upload");
+		xhr.send(form);
+	}
+
 	static function populate(bundle:Dynamic) {
 		WebFS.reset();
 		var manifest = bundle.manifest;
