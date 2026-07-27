@@ -1,0 +1,32 @@
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src * data:; connect-src *">
+	<script type="text/javascript" src="assets/js/jquery.min.js"></script>
+	<script type="text/javascript" src="assets/js/marked.min.js"></script>
+	<!-- Browser globals for libs the renderer `require()`s -->
+	<script type="text/javascript" src="assets/js/vendor/codemirror.js"></script>
+	<script type="text/javascript" src="assets/js/vendor/sortable.js"></script>
+	<script type="text/javascript" src="assets/js/vendor/pako.js"></script>
+	<script type="text/javascript" src="assets/js/web-shim.js"></script>
+	<link rel="stylesheet" href="assets/css/app.min.css"/>
+	<link rel="stylesheet" href="assets/css/codemirror/codemirror.css"/>
+	<link rel="stylesheet" href="assets/css/codemirror/lucario.css"/>
+	<!-- Config de embed (ajuste projectId/apiBaseUrl; normalmente injetado pelo produto hospedeiro) -->
+	<script>window.LDTK_CONFIG = { projectId: "demo", apiBaseUrl: "http://localhost:4477" };</script>
+</head>
+<body>
+	<div id="debug"></div>
+	<div id="miniNotif"></div>
+	<div id="updateInstall"></div>
+	<div id="clicktrap"></div>
+	<canvas id="webgl"></canvas>
+	<div id="page"></div>
+	<script type="text/javascript" src="assets/js/renderer.web.js"></script>
+	<xml id="notification"><div class="notification"><div class="content"></div></div></xml>
+	<div id="notificationList"></div>
+	<xml id="tip"><div class="tip"><div class="content"><div class="text"></div><div class="keys"></div></div></div></xml>
+	<xml id="progressBar"><div class="progressBar"><div class="label"></div><div class="barWrapper"><div class="bar"></div></div></div></xml>
+	<xml id="window"><div class="window"><div class="mask"></div><div class="wrapper"><div class="content"></div></div></div></xml>
+</body>
+</html>

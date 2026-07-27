@@ -3,15 +3,24 @@ package misc;
 class FileWatcher extends dn.Process {
 	static var MAX_RETRIES = 3;
 
+	#if web
+	var all : Array<{ watcher:Dynamic, path:String, cb:Void->Void }> = [];
+	#else
 	var all : Array<{ watcher:js.node.fs.FSWatcher, path:String, cb:Void->Void }> = [];
+	#end
 	var queuedChanges : Map<String, { absPath:String, cb:Void->Bool, retry:Int }> = new Map();
 
 	public function new() {
 		super(Editor.ME);
+		#if !web
 		js.node.Require.require("fs");
+		#end
 	}
 
 	public function watch(absFilePath:String, onChange:Void->Void) {
+		#if web
+		return; // sem file watching no web
+		#else
 		if( !NT.fileExists(absFilePath) )
 			return;
 
@@ -57,6 +66,7 @@ class FileWatcher extends dn.Process {
 		catch(e:Dynamic) {
 			App.LOG.error("Couldn't initialize FSWatcher for "+absFilePath);
 		}
+		#end
 	}
 
 	function queueReloading(absPath:String, onChange:Void->Void) {
