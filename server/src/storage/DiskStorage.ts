@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,14 @@ export class DiskStorage implements Storage {
 
   private versionPath(projectId: string): string {
     return join(this.projectDir(projectId), 'version');
+  }
+
+  private levelsDir(projectId: string): string {
+    return join(this.projectDir(projectId), 'levels');
+  }
+
+  private levelPath(projectId: string, iid: string): string {
+    return join(this.levelsDir(projectId), `${iid}.json`);
   }
 
   private async bump(projectId: string): Promise<string> {
@@ -49,17 +57,35 @@ export class DiskStorage implements Storage {
     return this.bump(projectId);
   }
 
-  async listLevels(): Promise<Record<string, unknown>> {
-    throw new Error('not implemented');
+  async listLevels(projectId: string): Promise<Record<string, unknown>> {
+    const dir = this.levelsDir(projectId);
+    if (!existsSync(dir)) return {};
+    const out: Record<string, unknown> = {};
+    for (const file of await readdir(dir)) {
+      if (!file.endsWith('.json')) continue;
+      const iid = file.slice(0, -'.json'.length);
+      out[iid] = JSON.parse(await readFile(join(dir, file), 'utf8'));
+    }
+    return out;
   }
-  async getLevel(): Promise<unknown | null> {
-    throw new Error('not implemented');
+
+  async getLevel(projectId: string, iid: string): Promise<unknown | null> {
+    const path = this.levelPath(projectId, iid);
+    if (!existsSync(path)) return null;
+    return JSON.parse(await readFile(path, 'utf8'));
   }
-  async putLevel(): Promise<string> {
-    throw new Error('not implemented');
+
+  async putLevel(projectId: string, iid: string, level: unknown): Promise<string> {
+    await mkdir(this.levelsDir(projectId), { recursive: true });
+    await writeFile(this.levelPath(projectId, iid), JSON.stringify(level), 'utf8');
+    return this.bump(projectId);
   }
-  async deleteLevel(): Promise<string | null> {
-    throw new Error('not implemented');
+
+  async deleteLevel(projectId: string, iid: string): Promise<string | null> {
+    const path = this.levelPath(projectId, iid);
+    if (!existsSync(path)) return null;
+    await rm(path);
+    return this.bump(projectId);
   }
   async listImages(): Promise<ImageRecord[]> {
     throw new Error('not implemented');
