@@ -202,11 +202,14 @@ git commit -m "feat(server): scaffolding do servidor web + rota /health"
   - `class DiskStorage implements Storage` — construtor `new DiskStorage(baseDir: string)`. Nesta tarefa apenas `getVersion`, `getManifest`, `putManifest` são implementados de verdade; `listLevels`/`getLevel`/`putLevel`/`deleteLevel`/`listImages`/`putImage`/`getImage` lançam `Error('not implemented')` (substituídos nas Tasks 3 e 4).
   - Layout em disco: `<baseDir>/projects/<projectId>/manifest.json`, `.../version`, `.../levels/<iid>.json`, `.../images/<imgId>.png` + `.../images/<imgId>.meta.json`.
 
-- [ ] **Step 1: Gerar o fixture de projeto em branco**
+- [ ] **Step 1: Copiar o fixture de projeto em branco**
 
-Abrir o LDtk desktop (build atual do repo), criar um projeto novo vazio e salvar como `server/fixtures/blank-project.json`. Este é um `ProjectJson` válido e carregável; o servidor o serve como default para projetos inexistentes, sem conhecer o schema. Confirmar que o arquivo é JSON válido:
+O repo já contém um projeto LDtk vazio e válido, gerado pelo próprio editor: `tests/_empty.ldtk` (jsonVersion 1.5.3, `externalLevels: false`, 1 nível vazio). Copiá-lo como fixture — o servidor o serve como default para projetos inexistentes, tratando-o como JSON opaco.
 
-Run: `cd server && node -e "JSON.parse(require('fs').readFileSync('fixtures/blank-project.json','utf8')); console.log('ok')"`
+Run:
+```bash
+mkdir -p server/fixtures && cp tests/_empty.ldtk server/fixtures/blank-project.json && node -e "JSON.parse(require('fs').readFileSync('server/fixtures/blank-project.json','utf8')); console.log('ok')"
+```
 Expected: imprime `ok`.
 
 - [ ] **Step 2: Escrever o teste que falha**
