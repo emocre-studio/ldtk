@@ -26,5 +26,28 @@ export function createMutationRouter(storage: Storage): Router {
     }),
   );
 
+  router.put(
+    '/api/project/:id/level/:iid',
+    asyncHandler(async (req, res) => {
+      const { id, iid } = req.params;
+      await requireIfMatch(req, storage, id);
+      const version = await storage.putLevel(id, iid, req.body);
+      res.set('ETag', version).json({ version });
+    }),
+  );
+
+  router.delete(
+    '/api/project/:id/level/:iid',
+    asyncHandler(async (req, res) => {
+      const { id, iid } = req.params;
+      await requireIfMatch(req, storage, id);
+      const version = await storage.deleteLevel(id, iid);
+      if (version === null) {
+        throw new HttpError(404, 'level_not_found', `Level ${iid} not found`);
+      }
+      res.set('ETag', version).json({ version });
+    }),
+  );
+
   return router;
 }
