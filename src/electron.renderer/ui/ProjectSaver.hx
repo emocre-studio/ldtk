@@ -617,8 +617,8 @@ class ProjectSaver extends dn.Process {
 				label: from.fileWithExt,
 				cb: ()->{
 					try {
-						dn.js.NodeTools.createDirs(to.directory);
-						dn.js.NodeTools.copyFile(from.full, to.full);
+						NT.createDirs(to.directory);
+						NT.copyFile(from.full, to.full);
 					}
 					catch(_) {
 						App.LOG.error("Failed to backup file: "+from.fileWithExt);

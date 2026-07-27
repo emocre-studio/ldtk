@@ -6,8 +6,6 @@
 -lib heaps
 -lib castle
 -lib deepnightLibs
--lib hxnodejs
--lib electron
 -lib ldtk-haxe-api
 -lib heaps-aseprite
 -lib uuid

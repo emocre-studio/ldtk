@@ -2,7 +2,9 @@ package misc;
 
 import sortablejs.*;
 import sortablejs.Sortable;
+#if !web
 import js.node.Fs;
+#end
 
 typedef InternalSortableOptions = {
 	var ?onlyDraggables: Bool;
@@ -1100,7 +1102,11 @@ class JsTools {
 
 
 	public static function isWindows() {
+		#if web
+		return js.Browser.navigator.platform.toLowerCase().indexOf("win")==0;
+		#else
 		return js.Node.process.platform.toLowerCase().indexOf("win")==0;
+		#end
 	}
 
 	public static function removeClassReg(jElem:js.jquery.JQuery, reg:EReg) {

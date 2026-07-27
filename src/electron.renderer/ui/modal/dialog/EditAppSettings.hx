@@ -23,7 +23,7 @@ class EditAppSettings extends ui.modal.Dialog {
 		else {
 			jContent.find(".update").click(_->{
 				if( App.ME.pendingUpdate.github ) {
-					App.ME.checkForUpdate();
+					#if !web App.ME.checkForUpdate(); #end
 				}
 				else
 					SHELL.openExternal(Const.DOWNLOAD_URL);
@@ -209,7 +209,7 @@ class EditAppSettings extends ui.modal.Dialog {
 		jScale.change( (_)->{
 			settings.v.appUiScale = Std.parseFloat( jScale.val() );
 			onSettingChanged();
-			electron.renderer.WebFrame.setZoomFactor( settings.getAppZoomFactor() );
+			#if !web electron.renderer.WebFrame.setZoomFactor( settings.getAppZoomFactor() ); #end
 		});
 
 		// Font scaling
