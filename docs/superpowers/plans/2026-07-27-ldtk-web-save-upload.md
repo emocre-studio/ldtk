@@ -458,6 +458,18 @@ git commit -m "feat(web): import de tileset via file input + upload pro servidor
 
 ---
 
+## Implementation notes (execução)
+
+Executado inline; ambos os checkpoints verificados no navegador contra o servidor real.
+
+- **Task 2**: o Haxe inferiu um tipo estrutural estreito para `manifest` a partir do primeiro campo acessado (`externalLevels`); foi preciso anotar `var manifest : Dynamic`.
+- **Task 6 — bug real encontrado na verificação**: `new Blob([bytes])` **sem `type`** chega ao servidor como `application/octet-stream` e é rejeitado com **415**. Corrigido passando o content-type explícito: `uploadImage` ganhou o parâmetro opcional `contentType` (o picker repassa `file.type`, com fallback derivado da extensão). Sem esse fix, todo import de tileset falharia.
+- Verificação **SAVE**: Ctrl+S → notificações "Saved project" + "Saved to server", título perde `[UNSAVED]`, servidor vai de `version 0 → 1`, e o reload traz o projeto salvo.
+- Verificação **UPLOAD**: `POST /images` → `201` com `{id, pxWid:2, pxHei:3, url}`; no reload o editor faz automaticamente `GET /api/project/demo/images/<id>` → `200` (reidratação da Task 5 confirmada pela aba de rede).
+- Builds: web e **desktop** compilam (as guardas `#if web` não regridem o desktop); interp 17/17; servidor 38/38.
+
+**Limitação conhecida:** o disparo do picker (`input.click()`) não é acionável no ambiente headless, então a Task 6 foi verificada exercitando o mesmo caminho HTTP que o picker usa (multipart → `POST /images`) mais a reidratação no reload; falta uma passada manual clicando "Pick image" num navegador real para validar o `FileReader`/`onchange`.
+
 ## Self-Review
 
 **Spec coverage:**
