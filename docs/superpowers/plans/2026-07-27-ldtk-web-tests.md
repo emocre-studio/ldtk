@@ -604,6 +604,28 @@ git commit -m "docs: como rodar as três suítes de teste do porte web"
 
 ---
 
+## Implementation notes (execução)
+
+Resultado: **76 asserções automatizadas** onde antes havia 17 (só o `VirtualFS`).
+
+| Suíte | Contagem | Tempo |
+|---|---|---|
+| Servidor (vitest) | 38 testes | ~1s |
+| `VirtualFS` (interp) | 17 asserções | <1s |
+| `ProjectTransport` (node + fakes) | 17 asserções | <1s |
+| Smoke e2e (Chrome real) | 4 cenários | ~15s |
+
+Desvios e descobertas:
+
+- **`Sys.println`/`Sys.exit` não existem no target JS.** O teste do transport usa `js.Browser.console.log` e `process.exit` via `js.Syntax`/`__js__`.
+- **`#page` não é "visible" para o Playwright.** O editor carrega (`<div id="page" class="editor">`), mas o elemento não tem bounding box próprio — o conteúdo é posicionado sobre o canvas. As asserções usam `toBeAttached()`, não `toBeVisible()`. (A tela de erro, essa sim, é `toBeVisible`.)
+- **Ctrl+S no e2e** usa o modificador `ControlOrMeta` do Playwright, porque o LDtk mapeia `ctrl s` para Cmd no macOS.
+- Playwright instalado com `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` + `channel: "chrome"`: 3 pacotes, sem download de navegador.
+
+**Os testes foram verificados por sabotagem** (um teste que nunca falha não vale nada):
+- inverter a asserção "flush não envia nível limpo" → unit falha com exit 1;
+- remover o fix do `WebFS.fileExists` (o bug real de níveis externos) → **o e2e falha**, e volta a passar ao restaurar.
+
 ## Self-Review
 
 **Spec coverage (issue #14):**
