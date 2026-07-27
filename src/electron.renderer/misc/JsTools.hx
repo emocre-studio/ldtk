@@ -969,12 +969,20 @@ class JsTools {
 
 
 		App.LOG.fileOp("Emptying dir "+path+" (onlyExts="+onlyExts+")...");
+		#if !web
 		js.node.Require.require("fs");
+		#end
 		var fp = dn.FilePath.fromDir(path);
 		for(f in NT.readDir(path)) {
 			fp.fileWithExt = f;
+			#if web
+			// No web o "disco" é o VirtualFS: um caminho é arquivo se não for diretório.
+			if( !NT.isDirectory(fp.full) && ( onlyExts==null || extMap.exists(fp.extension) ) )
+				NT.removeFile(fp.full);
+			#else
 			if( js.node.Fs.lstatSync(fp.full).isFile() && ( onlyExts==null || extMap.exists(fp.extension) ) )
 				js.node.Fs.unlinkSync(fp.full);
+			#end
 		}
 	}
 
@@ -990,12 +998,22 @@ class JsTools {
 			var dir = pendings.shift();
 			for(f in NT.readDir(dir)) {
 				var fp = dn.FilePath.fromFile(dir+"/"+f);
+				#if web
+				// No web o "disco" é o VirtualFS (sem symlinks): arquivo = não-diretório.
+				if( !NT.isDirectory(fp.full) ) {
+					if( ext==null || fp.extension==ext )
+						all.push(fp);
+				}
+				else
+					pendings.push(fp.full);
+				#else
 				if( js.node.Fs.lstatSync(fp.full).isFile() ) {
 					if( ext==null || fp.extension==ext )
 						all.push(fp);
 				}
 				else if( !js.node.Fs.lstatSync(fp.full).isSymbolicLink() )
 					pendings.push(fp.full);
+				#end
 			}
 		}
 		return all;

@@ -1913,6 +1913,8 @@ class Editor extends Page {
 				updateTitle();
 
 				#if web
+				// O saver grava no caminho virtual do projeto; o flush lê de lá.
+				web.ProjectTransport.setProjectVPath( project.filePath.full );
 				web.ProjectTransport.flush(
 					() -> N.success("Saved to server"),
 					(err) -> {
