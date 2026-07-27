@@ -24,7 +24,7 @@ class LostFile extends ui.modal.Dialog {
 			var lostDir = dn.FilePath.extractDirectoryWithoutSlash(lostFullPath, true);
 			var baseDir = NT.fileExists(lostDir) ? lostDir : project.getProjectDir();
 
-			dn.js.ElectronDialogs.openFile(lostExt==null ? null : ["."+lostExt], baseDir, function(newPath:String) {
+			ED.openFile(lostExt==null ? null : ["."+lostExt], baseDir, function(newPath:String) {
 				newPath = StringTools.replace(newPath, "\\", "/");
 				var newName = dn.FilePath.fromFile(newPath).fileName;
 				if( newName!=lostName ) {

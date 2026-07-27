@@ -453,7 +453,7 @@ class FieldInstancesForm {
 				input.click( ev->{
 					var uiDirId = "field_"+fi.def.identifier+"_"+fi.def.uid;
 					var defaultDir = App.ME.settings.getUiDir(project, uiDirId, project.getProjectDir());
-					dn.js.ElectronDialogs.openFile(fi.def.acceptFileTypes, defaultDir, function( absPath ) {
+					ED.openFile(fi.def.acceptFileTypes, defaultDir, function( absPath ) {
 						var fp = dn.FilePath.fromFile(absPath);
 						fp.useSlashes();
 						var relPath = project.makeRelativeFilePath(fp.full);

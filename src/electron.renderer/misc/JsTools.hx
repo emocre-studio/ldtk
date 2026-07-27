@@ -1389,7 +1389,7 @@ class JsTools {
 				defPath = project.getProjectDir();
 			var path = App.ME.settings.getUiDir(project, "PickImage", defPath);
 
-			dn.js.ElectronDialogs.openFile([".png", ".gif", ".jpg", ".jpeg", ".aseprite", ".ase"], path, function(absPath) {
+			ED.openFile([".png", ".gif", ".jpg", ".jpeg", ".aseprite", ".ase"], path, function(absPath) {
 				App.ME.settings.storeUiDir(project, "PickImage", dn.FilePath.extractDirectoryWithoutSlash(absPath,true));
 				var relPath = project.makeRelativeFilePath(absPath);
 				_pick(relPath);

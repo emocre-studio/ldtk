@@ -13,9 +13,11 @@ import dn.data.LocaleString;
 #if web
 import web.WebElectronTools as ET;
 import web.WebFS as NT;
+import web.WebDialogs as ED;
 #else
 import dn.js.ElectronTools as ET;
 import dn.js.NodeTools as NT;
+import dn.js.ElectronDialogs as ED;
 #end
 
 // Misc
