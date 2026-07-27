@@ -3,6 +3,7 @@ import cors from 'cors';
 import type { Storage } from './storage/Storage.js';
 import { createProjectRouter } from './routes/bundle.js';
 import { createMutationRouter } from './routes/mutations.js';
+import { createImageRouter } from './routes/images.js';
 import { errorMiddleware } from './errors.js';
 
 export function createApp(storage: Storage): Express {
@@ -16,6 +17,7 @@ export function createApp(storage: Storage): Express {
 
   app.use(createProjectRouter(storage));
   app.use(createMutationRouter(storage));
+  app.use(createImageRouter(storage));
 
   app.use(errorMiddleware);
   return app;
