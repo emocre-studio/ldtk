@@ -776,6 +776,21 @@ git commit -m "feat(web): boot web abre projeto do servidor (walking skeleton)"
 
 ---
 
+## Implementation notes / desvios (o que a execução revelou)
+
+O plano previu um "único ponto iterativo" (Task 4, Step 7) para guardar chamadas de runtime. Na prática, o build compilado emite **`require()` de topo** e usa globais Node/Electron que exigiram um **shim de browser** além das guardas `#if web`. Resumo do que foi necessário (tudo em `app/assets/js/web-shim.js` + `app/web.html`), não previsto no plano:
+
+- **`window.require` shim**: o bundle tem `require("electron"|"fs"|"os"|"path"|"process"|"buffer"|"zlib"|"timers"|"codemirror"|"sortablejs"|...)` no init de módulo. O shim devolve stubs seguros (as chamadas de runtime estão guardadas) e as libs reais para codemirror/sortablejs.
+- **Globais**: `process` (com `hrtime`), `global`, e um polyfill mínimo de `Buffer` (haxe.io.Bytes no js puro é ArrayBuffer, mas `sys.io.File`/hxnodejs tocam `Buffer` no static-init).
+- **zlib → pako**: `haxe.zip.Uncompress` descompacta assets embutidos no boot via `zlib.inflateSync`; mapeado para `pako` (novo dep em `app/package.json`, dist em `app/assets/js/vendor/`).
+- **`electron.ipcRenderer.sendSync`**: o `dn.js.ElectronTools` (interno da deepnightLibs, não coberto pelo alias `ET`) roteia info de janela por IPC; o shim responde por canal com valores de browser.
+- **`WebFS` fallback de assets**: o app lê seus próprios templates (`./assets/tpl/pages/*.html`) via `NT`. `WebFS.readFileString/Bytes/fileExists` fazem **XHR síncrono** para paths ausentes no VFS e cacheiam — arquivos de projeto vêm do VFS, assets do app vêm do HTTP.
+- **`web.html` na raiz `app/`** (não em `app/assets/`): o app resolve assets como `./assets/...` a partir da raiz que contém `assets/`. Servir de `app/` faz os paths baterem. Scripts/CSS referenciados com prefixo `assets/`.
+- **Loop em aba oculta**: navegadores congelam `requestAnimationFrame` em abas hidden e o dt do Heaps satura em 0 (freeze). O shim mantém o loop vivo (rAF→setTimeout) e usa um **relógio virtual** enquanto oculto. É só para o ambiente headless de verificação; em aba visível usa o clock real.
+- **Libs globais no `web.html`**: `jquery.min.js`, `marked.min.js`, `vendor/{codemirror,sortable,pako}.js`, depois `web-shim.js`, antes do `renderer.web.js`.
+
+**Verificado**: `haxe renderer.web.hxml` compila limpo; servindo `app/` + servidor da peça 1, `web.html` abre, faz `GET /api/project/demo/bundle`, e **renderiza o editor LDtk com o Level_0 do projeto** (canvas WebGL + painéis + toolbar), sem erros de console. `renderer.web.js` é artefato de build (gitignored, como `renderer.js`).
+
 ## Self-Review
 
 **Spec coverage (contra o design e as issues #6–#12):**

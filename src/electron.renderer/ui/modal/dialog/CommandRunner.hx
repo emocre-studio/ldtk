@@ -180,6 +180,12 @@ class CommandRunner extends ui.modal.Dialog {
 	}
 
 	public static function runMultipleCommands(p:data.Project, cmds:Array<ldtk.Json.CustomCommand>, onComplete:Void->Void) {
+		#if web
+		// Custom commands (child_process) não existem no web
+		if( onComplete!=null )
+			onComplete();
+		return;
+		#end
 		if( App.ME.settings.isProjectUntrusted(p.iid) ) {
 			if( onComplete!=null )
 				onComplete();

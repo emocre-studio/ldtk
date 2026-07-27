@@ -1,4 +1,6 @@
+#if !web
 import electron.renderer.IpcRenderer;
+#end
 #if debug
 import page.CrashReport; // force compilation in debug
 #end
@@ -83,9 +85,11 @@ class App extends dn.Process {
 		Chrono.COLORS_HIGH.timeThreshold = 0.30;
 
 		// Init window
+		#if !web
 		IpcRenderer.on("onWinClose", onWindowCloseButton);
 		IpcRenderer.on("onWinMove", onWindowMove);
 		IpcRenderer.on("settingsApplied", ()->updateBodyClasses());
+		#end
 
 		var win = js.Browser.window;
 		win.onblur = onWindowBlur;
@@ -140,10 +144,35 @@ class App extends dn.Process {
 		LOG.add("BOOT","AppZoomFactor: "+settings.getAppZoomFactor());
 
 		// Auto updater
+		#if !web
 		initAutoUpdater();
+		#end
 
 		// Start
 		delayer.addS( ()->{
+			#if web
+			// Web boot: load the project indicated by window.LDTK_CONFIG from the server
+			var projectId = web.WebConfig.projectId();
+			if( projectId==null ) {
+				LOG.error("LDTK_CONFIG.projectId ausente");
+				debug("Erro: LDTK_CONFIG.projectId ausente", 0xff0000, true);
+			}
+			else {
+				LOG.add("BOOT", 'Loading project "$projectId" from server...');
+				web.ProjectTransport.loadBundle(
+					projectId,
+					web.WebConfig.apiBaseUrl(),
+					(virtualPath) -> loadProject(virtualPath),
+					(err) -> {
+						LOG.error("Failed to load project: "+err);
+						debug("Não foi possível carregar o projeto do servidor:\n"+err, 0xff0000, true);
+					}
+				);
+			}
+
+			if( !hasGlContext )
+				onGlContextLoss();
+			#else
 			// Look for path and level index in args
 			var path = getArgPath();
 			if( path!=null && !path.isEmpty() && !path.isAbsolute() ) {
@@ -179,10 +208,13 @@ class App extends dn.Process {
 
 			if( !hasGlContext )
 				onGlContextLoss();
+			#end
 		}, 0.2);
 
 		LOG.add("BOOT", "Calling appReady...");
+		#if !web
 		IpcRenderer.invoke("appReady");
+		#end
 		updateBodyClasses();
 		LOG.flushOnAdd = false;
 		initKeyBindings();
@@ -302,6 +334,7 @@ class App extends dn.Process {
 		return null;
 	}
 
+	#if !web
 	function initAutoUpdater() {
 		// Init
 		dn.js.ElectronUpdater.initRenderer();
@@ -353,6 +386,7 @@ class App extends dn.Process {
 		// Check now
 		checkForUpdate();
 	}
+	#end
 
 	public function checkForUpdate() {
 		jBody.find("#updateInstall").empty().hide();
@@ -502,9 +536,9 @@ class App extends dn.Process {
 		return ui.ProjectSaver.hasAny() || ui.Modal.hasAnyUnclosable();
 	}
 
-	public static function isLinux() return js.node.Os.platform()=="linux";
-	public static function isWindows() return js.node.Os.platform()=="win32";
-	public static function isMac() return js.node.Os.platform()=="darwin";
+	public static function isLinux() return #if web js.Browser.navigator.platform.toLowerCase().indexOf("linux")>=0 #else js.node.Os.platform()=="linux" #end;
+	public static function isWindows() return #if web js.Browser.navigator.platform.toLowerCase().indexOf("win")>=0 #else js.node.Os.platform()=="win32" #end;
+	public static function isMac() return #if web js.Browser.navigator.platform.toLowerCase().indexOf("mac")>=0 #else js.node.Os.platform()=="darwin" #end;
 	// public static function isWindows() return false;
 	// public static function isMac() return true;
 
@@ -1110,7 +1144,7 @@ class App extends dn.Process {
 			clearDebug();
 			debug("-- Misc ----------------------------------------");
 			debugPre('Electron: ${Const.getElectronVersion()}');
-			debugPre('Detected OS: '+(isWindows()?"Windows":isMac()?"macOs":isLinux()?"Linux":"Unknown ("+js.node.Os.platform()+")"));
+			debugPre('Detected OS: '+(isWindows()?"Windows":isMac()?"macOs":isLinux()?"Linux":"Unknown ("+ #if web "web" #else js.node.Os.platform() #end +")"));
 			debugPre('FPS=${hxd.System.fpsLimit<=0 ? "100":Std.string(M.round(100*hxd.System.fpsLimit/60))}%');
 			debugPre('ElectronThrottling=${dn.js.ElectronTools.isThrottlingEnabled()}');
 			debugPre("electronZoom="+M.pretty(ET.getZoom(),2));

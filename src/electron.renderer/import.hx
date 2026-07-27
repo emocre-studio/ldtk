@@ -10,8 +10,13 @@ import hxd.Key as K;
 import Lang as L;
 import dn.data.GetText;
 import dn.data.LocaleString;
+#if web
+import web.WebElectronTools as ET;
+import web.WebFS as NT;
+#else
 import dn.js.ElectronTools as ET;
 import dn.js.NodeTools as NT;
+#end
 
 // Misc
 import page.Editor;
