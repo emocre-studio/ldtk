@@ -21,7 +21,7 @@ class WebImagePicker {
 						WebFS.fs.clearDirty(); // imagem já está no servidor
 						onPicked(relPath);
 					},
-					(err) -> js.Browser.window.alert("Falha no upload: " + err)
+					(err) -> ui.Notification.error("Falha ao enviar a imagem: " + err)
 				);
 			}
 			reader.readAsArrayBuffer(file);
