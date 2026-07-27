@@ -32,6 +32,84 @@ class ProjectTransport {
 		xhr.send();
 	}
 
+	static function sendJson(method:String, path:String, body:String, onOk:String->Void, onError:String->Void) {
+		var xhr = new js.html.XMLHttpRequest();
+		xhr.open(method, apiBaseUrl + path, true);
+		xhr.setRequestHeader("Content-Type", "application/json");
+		xhr.setRequestHeader("If-Match", version);
+		xhr.onreadystatechange = function() {
+			if( xhr.readyState != 4 ) return;
+			if( xhr.status == 409 ) { onError("conflict"); return; }
+			if( xhr.status < 200 || xhr.status >= 300 ) { onError('HTTP ${xhr.status} em $method $path'); return; }
+			try {
+				var r = haxe.Json.parse(xhr.responseText);
+				if( r.version != null ) version = Std.string(r.version);
+			} catch(_:Dynamic) {}
+			onOk(xhr.responseText);
+		}
+		xhr.onerror = function(_) onError('Erro de rede em $method $path');
+		xhr.send(body);
+	}
+
+	public static function flush(onOk:Void->Void, onError:String->Void) : Void {
+		var manifestJson = WebFS.fs.readString("/web/project.ldtk");
+		var manifest : Dynamic = haxe.Json.parse(manifestJson);
+
+		// Descobrir iids atuais e níveis alterados (dirty)
+		var currentIids : Array<String> = [];
+		var levelPuts : Array<{ iid:String, body:String }> = [];
+		function scanLevel(l:Dynamic) {
+			if( l==null || l.iid==null ) return;
+			var iid = Std.string(l.iid);
+			currentIids.push(iid);
+			if( manifest.externalLevels==true && l.externalRelPath!=null ) {
+				var vpath = "/web/" + Std.string(l.externalRelPath);
+				if( WebFS.fs.dirty.exists(vpath) && WebFS.fs.exists(vpath) )
+					levelPuts.push({ iid: iid, body: WebFS.fs.readString(vpath) });
+			}
+		}
+		if( manifest.worlds!=null )
+			for( w in (cast manifest.worlds:Array<Dynamic>) )
+				if( w.levels!=null ) for( l in (cast w.levels:Array<Dynamic>) ) scanLevel(l);
+		if( manifest.levels!=null )
+			for( l in (cast manifest.levels:Array<Dynamic>) ) scanLevel(l);
+
+		// Deletes: níveis que o servidor tinha e não existem mais
+		var deletes : Array<String> = [];
+		for( iid in serverLevelIids )
+			if( currentIids.indexOf(iid) < 0 ) deletes.push(iid);
+
+		var base = "/api/project/" + projectId;
+		// Sequência: manifest, depois PUTs de nível, depois DELETEs
+		function runDeletes(i:Int) {
+			if( i >= deletes.length ) {
+				serverLevelIids = currentIids;
+				WebFS.fs.clearDirty();
+				onOk();
+				return;
+			}
+			var xhr = new js.html.XMLHttpRequest();
+			xhr.open("DELETE", apiBaseUrl + base + "/level/" + deletes[i], true);
+			xhr.setRequestHeader("If-Match", version);
+			xhr.onreadystatechange = function() {
+				if( xhr.readyState!=4 ) return;
+				if( xhr.status==409 ) { onError("conflict"); return; }
+				if( xhr.status>=200 && xhr.status<300 ) {
+					try { var r = haxe.Json.parse(xhr.responseText); if(r.version!=null) version = Std.string(r.version); } catch(_:Dynamic) {}
+					runDeletes(i+1);
+				} else onError('HTTP ${xhr.status} em DELETE');
+			}
+			xhr.onerror = function(_) onError("Erro de rede em DELETE");
+			xhr.send();
+		}
+		function runLevels(i:Int) {
+			if( i >= levelPuts.length ) { runDeletes(0); return; }
+			sendJson("PUT", base + "/level/" + levelPuts[i].iid, levelPuts[i].body,
+				(_) -> runLevels(i+1), onError);
+		}
+		sendJson("PUT", base + "/manifest", manifestJson, (_) -> runLevels(0), onError);
+	}
+
 	static function populate(bundle:Dynamic) {
 		WebFS.reset();
 		var manifest = bundle.manifest;
