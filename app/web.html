@@ -13,7 +13,17 @@
 	<link rel="stylesheet" href="assets/css/codemirror/codemirror.css"/>
 	<link rel="stylesheet" href="assets/css/codemirror/lucario.css"/>
 	<!-- Config de embed (ajuste projectId/apiBaseUrl; normalmente injetado pelo produto hospedeiro) -->
-	<script>window.LDTK_CONFIG = { projectId: "demo", apiBaseUrl: "http://localhost:4477" };</script>
+	<script>
+		// O produto hospedeiro normalmente injeta este objeto; aqui aceitamos
+		// também ?p=<projectId> e ?api=<baseUrl> para facilitar testes locais.
+		(function(){
+			var q = new URLSearchParams(location.search);
+			window.LDTK_CONFIG = {
+				projectId: q.get("p") || "demo",
+				apiBaseUrl: q.get("api") || "http://localhost:4477"
+			};
+		})();
+	</script>
 </head>
 <body>
 	<div id="debug"></div>

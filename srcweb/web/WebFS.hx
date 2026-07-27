@@ -41,8 +41,11 @@ class WebFS {
 		return false;
 	}
 
+	/** NodeTools.fileExists é usado tanto para arquivos quanto para diretórios
+		(ex.: o ProjectLoader valida o dir de níveis externos), então diretórios
+		do VFS também contam como "existentes". **/
 	public static function fileExists(path:String) : Bool
-		return fs.exists(path) || tryFetchIntoVfs(path);
+		return fs.exists(path) || fs.isDir(path) || tryFetchIntoVfs(path);
 
 	public static function readFileString(path:String) : String {
 		tryFetchIntoVfs(path);

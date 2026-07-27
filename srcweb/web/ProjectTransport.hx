@@ -23,7 +23,7 @@ class ProjectTransport {
 				version = bundle.version != null ? Std.string(bundle.version) : "0";
 				serverLevelIids = bundle.levels != null ? Reflect.fields(bundle.levels) : [];
 				populate(bundle);
-				fetchImages( bundle.images, () -> onOk("/web/project.ldtk"), onError );
+				fetchImages( bundle.images, () -> onOk(projectVPath), onError );
 			} catch( e:Dynamic ) {
 				onError("Falha ao processar bundle: " + Std.string(e));
 			}
@@ -83,7 +83,7 @@ class ProjectTransport {
 	}
 
 	public static function flush(onOk:Void->Void, onError:String->Void) : Void {
-		var manifestJson = WebFS.fs.readString("/web/project.ldtk");
+		var manifestJson = WebFS.fs.readString(projectVPath);
 		var manifest : Dynamic = haxe.Json.parse(manifestJson);
 
 		// Descobrir iids atuais e níveis alterados (dirty)
@@ -169,10 +169,51 @@ class ProjectTransport {
 		xhr.send(form);
 	}
 
+	/**
+		Caminho virtual do .ldtk. Com níveis externos, o LDtk assume que o diretório
+		dos níveis tem o MESMO nome do arquivo do projeto (`getRelExternalFilesDir()`
+		== `filePath.fileName`). Como o manifesto carrega `externalRelPath` no formato
+		`<dir>/<level>.ldtkl`, derivamos o nome do arquivo virtual desse `<dir>` — caso
+		contrário o loader procuraria `/web/project/` e falharia com ExternalDirMissing.
+	**/
+	public static var projectVPath(default,null) : String = "/web/project.ldtk";
+
+	/** O editor pode renomear o projeto (e o dir de níveis); o flush precisa ler
+		o manifesto de onde o ProjectSaver realmente escreveu. **/
+	public static function setProjectVPath(path:String) {
+		if( path!=null && path.length>0 )
+			projectVPath = path;
+	}
+
+	static function firstExternalRelPath(manifest:Dynamic) : String {
+		function scan(levels:Array<Dynamic>) : String {
+			if( levels==null ) return null;
+			for( l in levels )
+				if( l!=null && l.externalRelPath!=null ) return Std.string(l.externalRelPath);
+			return null;
+		}
+		var r = scan( cast manifest.levels );
+		if( r!=null ) return r;
+		if( manifest.worlds!=null )
+			for( w in (cast manifest.worlds : Array<Dynamic>) ) {
+				var r2 = scan( cast w.levels );
+				if( r2!=null ) return r2;
+			}
+		return null;
+	}
+
 	static function populate(bundle:Dynamic) {
 		WebFS.reset();
 		var manifest = bundle.manifest;
-		WebFS.writeFileString("/web/project.ldtk", haxe.Json.stringify(manifest));
+
+		// Nome do arquivo virtual = nome do dir dos níveis externos (quando houver)
+		projectVPath = "/web/project.ldtk";
+		if( manifest.externalLevels == true ) {
+			var rel = firstExternalRelPath(manifest);
+			if( rel!=null && rel.indexOf("/")>0 )
+				projectVPath = "/web/" + rel.substr(0, rel.indexOf("/")) + ".ldtk";
+		}
+		WebFS.writeFileString(projectVPath, haxe.Json.stringify(manifest));
 
 		// Níveis externos: mapear iid -> externalRelPath a partir do manifesto
 		if( manifest.externalLevels == true && bundle.levels != null ) {
