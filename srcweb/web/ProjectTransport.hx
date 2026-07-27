@@ -1,7 +1,14 @@
 package web;
 
 class ProjectTransport {
+	public static var projectId : String;
+	public static var apiBaseUrl : String;
+	public static var version : String = "0";
+	public static var serverLevelIids : Array<String> = [];
+
 	public static function loadBundle(projectId:String, apiBaseUrl:String, onOk:String->Void, onError:String->Void) : Void {
+		ProjectTransport.projectId = projectId;
+		ProjectTransport.apiBaseUrl = apiBaseUrl;
 		var url = apiBaseUrl + "/api/project/" + projectId + "/bundle";
 		var xhr = new js.html.XMLHttpRequest();
 		xhr.open("GET", url, true);
@@ -13,6 +20,8 @@ class ProjectTransport {
 			}
 			try {
 				var bundle = haxe.Json.parse(xhr.responseText);
+				version = bundle.version != null ? Std.string(bundle.version) : "0";
+				serverLevelIids = bundle.levels != null ? Reflect.fields(bundle.levels) : [];
 				populate(bundle);
 				onOk("/web/project.ldtk");
 			} catch( e:Dynamic ) {
