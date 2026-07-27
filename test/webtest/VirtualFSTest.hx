@@ -51,6 +51,14 @@ class VirtualFSTest {
 		fs.writeString("/web/a/b.txt", "x");
 		check("normalized dir", fs.isDir("/web/a/"));
 
+		// WebFS delega ao VFS singleton
+		web.WebFS.reset();
+		web.WebFS.writeFileString("/web/p.ldtk", "{}");
+		check("WebFS fileExists", web.WebFS.fileExists("/web/p.ldtk"));
+		check("WebFS readFileString", web.WebFS.readFileString("/web/p.ldtk") == "{}");
+		check("WebFS isWindows false", web.WebFS.isWindows() == false);
+		check("WebFS checkPermissions true", web.WebFS.checkPermissions("/web", true, true, false));
+
 		Sys.println('VirtualFS: $pass passed, $fail failed');
 		Sys.exit(fail == 0 ? 0 : 1);
 	}
