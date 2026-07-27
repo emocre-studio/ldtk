@@ -141,11 +141,19 @@ class ProjectTransport {
 		sendJson("PUT", base + "/manifest", manifestJson, (_) -> runLevels(0), onError);
 	}
 
-	public static function uploadImage(bytes:haxe.io.Bytes, name:String,
+	public static function uploadImage(bytes:haxe.io.Bytes, name:String, ?contentType:String,
 		onOk:(img:{id:String,name:String,url:String,pxWid:Int,pxHei:Int})->Void, onError:String->Void) : Void {
 		var form = new js.html.FormData();
 		var arr = new js.lib.Uint8Array(bytes.getData());
-		var blob = new js.html.Blob([arr]);
+		// O servidor valida o content-type do arquivo: um Blob sem `type` chega
+		// como application/octet-stream e é rejeitado com 415.
+		if( contentType==null || contentType=="" )
+			contentType = switch( extOf(name).toLowerCase() ) {
+				case "jpg", "jpeg": "image/jpeg";
+				case "gif": "image/gif";
+				case _: "image/png";
+			}
+		var blob = new js.html.Blob([arr], { type: contentType });
 		form.append("file", blob, name);
 		var xhr = new js.html.XMLHttpRequest();
 		xhr.open("POST", apiBaseUrl + "/api/project/" + projectId + "/images", true);
