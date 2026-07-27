@@ -23,13 +23,44 @@ class ProjectTransport {
 				version = bundle.version != null ? Std.string(bundle.version) : "0";
 				serverLevelIids = bundle.levels != null ? Reflect.fields(bundle.levels) : [];
 				populate(bundle);
-				onOk("/web/project.ldtk");
+				fetchImages( bundle.images, () -> onOk("/web/project.ldtk"), onError );
 			} catch( e:Dynamic ) {
 				onError("Falha ao processar bundle: " + Std.string(e));
 			}
 		}
 		xhr.onerror = function(_) onError('Erro de rede ao carregar $url');
 		xhr.send();
+	}
+
+	static function extOf(name:String) : String {
+		var i = name.lastIndexOf(".");
+		return i>=0 ? name.substr(i+1) : "png";
+	}
+
+	static function fetchImages(images:Array<Dynamic>, onDone:Void->Void, onError:String->Void) {
+		if( images==null || images.length==0 ) { onDone(); return; }
+		var remaining = images.length;
+		var failed = false;
+		for( img in images ) {
+			var id = Std.string(img.id);
+			var vpath = "/web/images/" + id + "." + extOf(Std.string(img.name));
+			var xhr = new js.html.XMLHttpRequest();
+			xhr.open("GET", apiBaseUrl + Std.string(img.url), true);
+			xhr.responseType = ARRAYBUFFER;
+			xhr.onreadystatechange = function() {
+				if( xhr.readyState!=4 ) return;
+				if( xhr.status>=200 && xhr.status<300 && xhr.response!=null ) {
+					var bytes = haxe.io.Bytes.ofData(xhr.response);
+					WebFS.fs.writeBytes(vpath, bytes);
+				} else if( !failed ) {
+					failed = true; onError('HTTP ${xhr.status} ao buscar imagem $id');
+				}
+				remaining--;
+				if( remaining==0 && !failed ) { WebFS.fs.clearDirty(); onDone(); }
+			}
+			xhr.onerror = function(_) { if(!failed){ failed=true; onError("Erro de rede ao buscar imagem"); } }
+			xhr.send();
+		}
 	}
 
 	static function sendJson(method:String, path:String, body:String, onOk:String->Void, onError:String->Void) {
