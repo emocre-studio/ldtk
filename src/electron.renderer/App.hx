@@ -151,24 +151,7 @@ class App extends dn.Process {
 		// Start
 		delayer.addS( ()->{
 			#if web
-			// Web boot: load the project indicated by window.LDTK_CONFIG from the server
-			var projectId = web.WebConfig.projectId();
-			if( projectId==null ) {
-				LOG.error("LDTK_CONFIG.projectId ausente");
-				debug("Erro: LDTK_CONFIG.projectId ausente", 0xff0000, true);
-			}
-			else {
-				LOG.add("BOOT", 'Loading project "$projectId" from server...');
-				web.ProjectTransport.loadBundle(
-					projectId,
-					web.WebConfig.apiBaseUrl(),
-					(virtualPath) -> loadProject(virtualPath),
-					(err) -> {
-						LOG.error("Failed to load project: "+err);
-						debug("Não foi possível carregar o projeto do servidor:\n"+err, 0xff0000, true);
-					}
-				);
-			}
+			startWebBoot();
 
 			if( !hasGlContext )
 				onGlContextLoss();
@@ -219,6 +202,41 @@ class App extends dn.Process {
 		LOG.flushOnAdd = false;
 		initKeyBindings();
 	}
+
+
+	#if web
+	/** Carrega o projeto indicado por window.LDTK_CONFIG. Reutilizado pelo botão
+		"Tentar de novo" da tela de erro. **/
+	public function startWebBoot() {
+		var projectId = web.WebConfig.projectId();
+		if( projectId==null ) {
+			LOG.error("LDTK_CONFIG.projectId ausente");
+			web.WebErrorScreen.show(
+				"Configuração ausente",
+				"window.LDTK_CONFIG.projectId não foi definido. O produto hospedeiro precisa informar qual projeto abrir."
+			);
+			return;
+		}
+
+		LOG.add("BOOT", 'Loading project "$projectId" from server...');
+		web.ProjectTransport.loadBundle(
+			projectId,
+			web.WebConfig.apiBaseUrl(),
+			(virtualPath) -> {
+				web.WebErrorScreen.clear();
+				loadProject(virtualPath);
+			},
+			(err) -> {
+				LOG.error("Failed to load project: "+err);
+				web.WebErrorScreen.show(
+					"Não foi possível carregar o projeto",
+					err,
+					() -> startWebBoot()
+				);
+			}
+		);
+	}
+	#end
 
 
 	function initKeyBindings() {
