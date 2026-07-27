@@ -19,6 +19,7 @@ class WebFS {
 	static function tryFetchIntoVfs(path:String) : Bool {
 		if( fs.exists(path) )
 			return true;
+		#if js
 		try {
 			var xhr = new js.html.XMLHttpRequest();
 			xhr.open("GET", path, false); // synchronous
@@ -36,6 +37,7 @@ class WebFS {
 			}
 		}
 		catch(_:Dynamic) {}
+		#end
 		return false;
 	}
 
