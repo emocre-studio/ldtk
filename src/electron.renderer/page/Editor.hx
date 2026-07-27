@@ -1901,36 +1901,74 @@ class Editor extends Page {
 
 		// Save project
 		new ui.ProjectSaver(this, project, (success)->{
-			if( !success )
+			if( !success ) {
 				N.error("Saving failed!");
-			else {
-				App.LOG.fileOp('Saved "${project.filePath.fileWithExt}".');
-				N.success('Saved project', project.filePath.fileName);
-
-				App.ME.registerRecentProject(project.filePath.full);
-				this.needSaving = false;
-				ge.emit(ProjectSaved);
-				updateTitle();
-
-				#if web
-				// O saver grava no caminho virtual do projeto; o flush lê de lá.
-				web.ProjectTransport.setProjectVPath( project.filePath.full );
-				web.ProjectTransport.flush(
-					() -> N.success("Saved to server"),
-					(err) -> {
-						if( err=="conflict" )
-							N.error("O projeto mudou no servidor; recarregue a página.");
-						else
-							N.error("Falha ao salvar no servidor: "+err);
-					}
-				);
-				#end
+				if( onComplete!=null )
+					onComplete();
+				return;
 			}
 
+			App.LOG.fileOp('Saved "${project.filePath.fileWithExt}".');
+			N.success('Saved project', project.filePath.fileName);
+
+			App.ME.registerRecentProject(project.filePath.full);
+			this.needSaving = false;
+			ge.emit(ProjectSaved);
+			updateTitle();
+
+			#if web
+			// No web o save só termina de verdade quando o projeto chega ao servidor,
+			// então `onComplete` (que pode fechar/sair do editor) espera o flush.
+			web.ProjectTransport.setProjectVPath( project.filePath.full );
+			web.ProjectTransport.flush(
+				() -> {
+					N.success("Saved to server");
+					if( onComplete!=null )
+						onComplete();
+				},
+				(err) -> {
+					// O projeto NÃO está no servidor: manter marcado como não-salvo
+					// para a UI não mentir. O dirty set do VFS é preservado pelo
+					// flush, então o próximo save reenvia tudo.
+					this.needSaving = true;
+					updateTitle();
+					if( err=="conflict" )
+						onWebSaveConflict();
+					else
+						N.error("Falha ao salvar no servidor: "+err);
+					// `onComplete` NÃO é chamado de propósito: uma ação pendente
+					// (sair do editor, fechar o projeto) não deve prosseguir com o
+					// trabalho ainda não persistido no servidor.
+				}
+			);
+			#else
 			if( onComplete!=null )
 				onComplete();
+			#end
 		});
 	}
+
+
+	#if web
+	/** O servidor rejeitou o save porque o projeto mudou lá (ETag/If-Match).
+		Sem merge automático: o usuário escolhe descartar o local ou seguir editando. **/
+	function onWebSaveConflict() {
+		new ui.modal.dialog.Choice(
+			Lang.t._("O projeto foi modificado no servidor desde que você o abriu.\nSalvar agora sobrescreveria essas mudanças, então o salvamento foi cancelado."),
+			[
+				{
+					label: "Recarregar do servidor (descarta suas alterações)",
+					className: "gray",
+					cb: () -> ET.reloadWindow(),
+				},
+				{
+					label: "Continuar editando",
+					cb: () -> {},
+				},
+			]
+		);
+	}
+	#end
 
 
 	function onBackupRelink() {
