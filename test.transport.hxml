@@ -1,0 +1,5 @@
+-cp srcweb
+-cp test
+-lib deepnightLibs
+-main webtest.ProjectTransportTest
+-js .tmp/transport-test.js

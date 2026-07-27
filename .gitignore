@@ -31,3 +31,4 @@ tests/_private
 tests/_backups
 tests/*.txt
 app/assets/js/renderer.web.js
+.tmp/
