@@ -1362,17 +1362,21 @@ class JsTools {
 		jPick.appendTo(jWrapper);
 		jPick.click( (_)->{
 			var project = Editor.ME.project;
+			ui.Tip.clear();
+			#if web
+			web.WebImagePicker.pick( (relPath) -> _pick(relPath) );
+			#else
 			var defPath = project.makeAbsoluteFilePath( dn.FilePath.extractDirectoryWithoutSlash(curRelPath, true) );
 			if( defPath==null )
 				defPath = project.getProjectDir();
 			var path = App.ME.settings.getUiDir(project, "PickImage", defPath);
-			ui.Tip.clear();
 
 			dn.js.ElectronDialogs.openFile([".png", ".gif", ".jpg", ".jpeg", ".aseprite", ".ase"], path, function(absPath) {
 				App.ME.settings.storeUiDir(project, "PickImage", dn.FilePath.extractDirectoryWithoutSlash(absPath,true));
 				var relPath = project.makeRelativeFilePath(absPath);
 				_pick(relPath);
 			});
+			#end
 		});
 
 		// Existing image assets

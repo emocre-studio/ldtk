@@ -1850,6 +1850,9 @@ class Editor extends Page {
 
 		// Save as...
 		if( saveAs ) {
+			#if web
+			saveAs = false; // no web não há "salvar como"; salva o projeto atual
+			#else
 			var oldDir = project.getProjectDir();
 
 			dn.js.ElectronDialogs.saveFileAs(["."+Const.FILE_EXTENSION, ".json"], project.getProjectDir(), function(filePath:String) {
@@ -1861,6 +1864,7 @@ class Editor extends Page {
 				onSave(false, bypasses, onComplete);
 			});
 			return;
+			#end
 		}
 
 		// Check sample file
@@ -1878,7 +1882,7 @@ class Editor extends Page {
 		}
 
 		// Check missing file
-		if( !bypasses.exists("missing") && !NT.fileExists(project.filePath.full) ) {
+		if( #if !web !bypasses.exists("missing") && !NT.fileExists(project.filePath.full) #else false #end ) {
 			needSaving = true;
 			new ui.modal.dialog.Confirm(
 				null,
@@ -1907,6 +1911,18 @@ class Editor extends Page {
 				this.needSaving = false;
 				ge.emit(ProjectSaved);
 				updateTitle();
+
+				#if web
+				web.ProjectTransport.flush(
+					() -> N.success("Saved to server"),
+					(err) -> {
+						if( err=="conflict" )
+							N.error("O projeto mudou no servidor; recarregue a página.");
+						else
+							N.error("Falha ao salvar no servidor: "+err);
+					}
+				);
+				#end
 			}
 
 			if( onComplete!=null )
