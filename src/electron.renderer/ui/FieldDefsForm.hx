@@ -952,7 +952,7 @@ class FieldDefsForm {
 		// Test regex
 		if( curField.regex!=null ) {
 			jForm.find(".testRegex").click( (_)->{
-				electron.Shell.openExternal( "https://regex101.com/"
+				SHELL.openExternal( "https://regex101.com/"
 					+ "?regex="+curField.getRegexContent()
 					+ "&flags="+curField.getRegexFlagsStr()
 				);

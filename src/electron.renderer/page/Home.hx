@@ -74,7 +74,7 @@ class Home extends Page {
 			w.jContent.find("[data-link]").click((ev:js.jquery.Event)->{
 				var jButton = ev.getThis();
 				var url = jButton.attr("data-link");
-				electron.Shell.openExternal(url);
+				SHELL.openExternal(url);
 			});
 		});
 

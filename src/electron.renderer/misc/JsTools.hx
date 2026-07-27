@@ -713,14 +713,14 @@ class JsTools {
 			link.click( function(ev:js.jquery.Event) {
 				ev.preventDefault();
 				ev.stopPropagation();
-				electron.Shell.openExternal(url);
+				SHELL.openExternal(url);
 				N.msg("Opening url...");
 			});
 			link.on("auxclick", (ev:js.jquery.Event)->{
 				switch ev.button {
 					case 1:
 						ev.preventDefault();
-						electron.Shell.openExternal(url);
+						SHELL.openExternal(url);
 
 					case 2:
 						var ctx = new ui.modal.ContextMenu(ev);

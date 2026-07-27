@@ -71,7 +71,7 @@ class CrashReport extends Page {
 				];
 				txt = txt.concat( App.LOG.getLasts(50) );
 				txt.push("```");
-				electron.Clipboard.write({ text:txt.join("\n") });
+				CLIP.write({ text:txt.join("\n") });
 				ev.getThis()
 					.addClass("done")
 					.text("Copied to clipboard!");
@@ -79,7 +79,7 @@ class CrashReport extends Page {
 
 			// Report
 			jContent.find("button.report").click( (_)->{
-				electron.Shell.openExternal( Const.REPORT_BUG_URL );
+				SHELL.openExternal( Const.REPORT_BUG_URL );
 			});
 
 			// Restart

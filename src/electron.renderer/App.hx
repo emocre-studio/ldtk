@@ -439,7 +439,7 @@ class App extends dn.Process {
 				pendingUpdate = { ver:latest.full, github:false }
 
 				showUpdateButton(latest.full, "world", "Update available", false, ()->{
-					electron.Shell.openExternal(Const.DOWNLOAD_URL);
+					SHELL.openExternal(Const.DOWNLOAD_URL);
 				});
 			}
 			else {

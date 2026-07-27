@@ -26,7 +26,7 @@ class EditAppSettings extends ui.modal.Dialog {
 					App.ME.checkForUpdate();
 				}
 				else
-					electron.Shell.openExternal(Const.DOWNLOAD_URL);
+					SHELL.openExternal(Const.DOWNLOAD_URL);
 				close();
 			});
 		}
