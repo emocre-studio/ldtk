@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { imageSize } from 'image-size';
 import type { ImageRecord, StoredImage, Storage } from './Storage.js';
 
@@ -30,7 +31,8 @@ export class DiskStorage implements Storage {
   }
 
   private async bump(projectId: string): Promise<string> {
-    const current = parseInt(await this.getVersion(projectId), 10);
+    const parsed = parseInt(await this.getVersion(projectId), 10);
+    const current = Number.isFinite(parsed) ? parsed : 0;
     const next = String(current + 1);
     await mkdir(this.projectDir(projectId), { recursive: true });
     await writeFile(this.versionPath(projectId), next, 'utf8');
@@ -119,10 +121,7 @@ export class DiskStorage implements Storage {
     const dir = this.imagesDir(projectId);
     await mkdir(dir, { recursive: true });
     const dims = imageSize(bytes);
-    const existing = existsSync(dir)
-      ? (await readdir(dir)).filter((f) => f.endsWith('.meta.json')).length
-      : 0;
-    const id = `img_${existing + 1}`;
+    const id = `img_${randomUUID()}`;
     const ext = this.extFor(contentType);
     await writeFile(join(dir, `${id}.${ext}`), bytes);
     const meta = { name, pxWid: dims.width, pxHei: dims.height, contentType };

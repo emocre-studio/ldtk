@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Storage } from '../storage/Storage.js';
 import { asyncHandler } from '../errors.js';
+import { safeSegment } from './validate.js';
 
 export function createProjectRouter(storage: Storage): Router {
   const router = Router();
@@ -8,7 +9,7 @@ export function createProjectRouter(storage: Storage): Router {
   router.get(
     '/api/project/:id/bundle',
     asyncHandler(async (req, res) => {
-      const id = req.params.id;
+      const id = safeSegment(req.params.id, 'id');
       const [version, manifest, levels, images] = await Promise.all([
         storage.getVersion(id),
         storage.getManifest(id),

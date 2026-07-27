@@ -1,6 +1,7 @@
 import { Router, type Request } from 'express';
 import type { Storage } from '../storage/Storage.js';
 import { asyncHandler, HttpError } from '../errors.js';
+import { safeSegment } from './validate.js';
 
 async function requireIfMatch(req: Request, storage: Storage, id: string): Promise<void> {
   const ifMatch = req.header('If-Match');
@@ -19,7 +20,7 @@ export function createMutationRouter(storage: Storage): Router {
   router.put(
     '/api/project/:id/manifest',
     asyncHandler(async (req, res) => {
-      const id = req.params.id;
+      const id = safeSegment(req.params.id, 'id');
       await requireIfMatch(req, storage, id);
       const version = await storage.putManifest(id, req.body);
       res.set('ETag', version).json({ version });
@@ -29,7 +30,8 @@ export function createMutationRouter(storage: Storage): Router {
   router.put(
     '/api/project/:id/level/:iid',
     asyncHandler(async (req, res) => {
-      const { id, iid } = req.params;
+      const id = safeSegment(req.params.id, 'id');
+      const iid = safeSegment(req.params.iid, 'iid');
       await requireIfMatch(req, storage, id);
       const version = await storage.putLevel(id, iid, req.body);
       res.set('ETag', version).json({ version });
@@ -39,7 +41,8 @@ export function createMutationRouter(storage: Storage): Router {
   router.delete(
     '/api/project/:id/level/:iid',
     asyncHandler(async (req, res) => {
-      const { id, iid } = req.params;
+      const id = safeSegment(req.params.id, 'id');
+      const iid = safeSegment(req.params.iid, 'iid');
       await requireIfMatch(req, storage, id);
       const version = await storage.deleteLevel(id, iid);
       if (version === null) {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer, { MulterError } from 'multer';
 import type { Storage } from '../storage/Storage.js';
 import { asyncHandler, HttpError } from '../errors.js';
+import { safeSegment } from './validate.js';
 
 const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/gif']);
 
@@ -24,8 +25,12 @@ export function createImageRouter(storage: Storage): Router {
     '/api/project/:id/images',
     (req, res, next) => {
       upload.single('file')(req, res, (err: unknown) => {
-        if (err instanceof MulterError && err.code === 'LIMIT_FILE_SIZE') {
-          next(new HttpError(413, 'file_too_large', 'Image exceeds 20MB limit'));
+        if (err instanceof MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            next(new HttpError(413, 'file_too_large', 'Image exceeds 20MB limit'));
+            return;
+          }
+          next(new HttpError(400, 'upload_error', err.message));
           return;
         }
         next(err);
@@ -35,7 +40,7 @@ export function createImageRouter(storage: Storage): Router {
       if (!req.file) {
         throw new HttpError(400, 'no_file', 'Expected a multipart field named "file"');
       }
-      const id = req.params.id;
+      const id = safeSegment(req.params.id, 'id');
       const rec = await storage.putImage(
         id,
         req.file.buffer,
@@ -49,9 +54,11 @@ export function createImageRouter(storage: Storage): Router {
   router.get(
     '/api/project/:id/images/:imgId',
     asyncHandler(async (req, res) => {
-      const img = await storage.getImage(req.params.id, req.params.imgId);
+      const id = safeSegment(req.params.id, 'id');
+      const imgId = safeSegment(req.params.imgId, 'imgId');
+      const img = await storage.getImage(id, imgId);
       if (!img) {
-        throw new HttpError(404, 'image_not_found', `Image ${req.params.imgId} not found`);
+        throw new HttpError(404, 'image_not_found', `Image ${imgId} not found`);
       }
       res.set('Content-Type', img.contentType);
       res.set('Cache-Control', 'public, max-age=31536000, immutable');

@@ -51,6 +51,14 @@ describe('image routes', () => {
     expect(res.body.code).toBe('no_file');
   });
 
+  it('returns 400 when the file is attached under the wrong field name', async () => {
+    const res = await request(app)
+      .post('/api/project/p1/images')
+      .attach('wrong', pngPath, { filename: 'tiles.png', contentType: 'image/png' });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('upload_error');
+  });
+
   it('returns 404 for an unknown image', async () => {
     const res = await request(app).get('/api/project/p1/images/nope');
     expect(res.status).toBe(404);
