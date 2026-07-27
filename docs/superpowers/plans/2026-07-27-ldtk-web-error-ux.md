@@ -330,6 +330,18 @@ git commit -m "fix(web): erro de upload usa notificação em vez de window.alert
 
 ---
 
+## Implementation notes (execução)
+
+Executado inline; as quatro falhas foram simuladas de verdade (servidor derrubado, porta errada, versão adulterada por fora).
+
+- **Task 1**: verificada apontando para uma porta sem servidor → tela bloqueante com o detalhe do erro; e o **retry funciona sem reload** (subi o servidor, cliquei "Tentar de novo", o editor abriu).
+- **Descoberta durante a Task 2 (fora do plano, corrigida):** `onComplete` do `onSave` rodava **antes** do flush assíncrono terminar. No fluxo "salvar antes de sair", isso levava o usuário para a Home mesmo com o save falhando — trabalho não persistido e contexto perdido. Agora, no web, `onComplete` só roda no sucesso do flush; em caso de erro a ação pendente é **abortada**. Verificado: com o servidor fora, "fechar projeto → YES" mantém o editor aberto.
+- **Task 3**: conflito real reproduzido (outro cliente fez `PUT` e subiu a versão) → diálogo de conflito, editor preservado, `[UNSAVED]` mantido, e o **servidor não foi sobrescrito** (manifesto do "outro cliente" intacto).
+- **Task 4**: `window.alert` removido; `grep` confirma que não há mais nenhum em `srcweb/`.
+- Builds: web e desktop compilam; interp 17/17; servidor 38/38.
+
+**Nota de teste:** no ambiente headless o Ctrl+S sintético é engolido quando há modal aberto (`isLocked()`), o que é o comportamento correto do editor. Os testes de save usaram o botão "YES" do diálogo de alterações não salvas, que exercita o mesmo `onSave`.
+
 ## Self-Review
 
 **Spec coverage** (tabela de erros do design + issue #13):
