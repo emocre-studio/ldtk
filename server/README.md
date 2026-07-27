@@ -43,3 +43,21 @@ detectado por versão/ETag por projeto. Sem autenticação no MVP.
 ## Testes
 
     npm test
+
+## Testes do porte web
+
+Três suítes, da mais rápida para a mais lenta:
+
+    # 1. Servidor (unit + integração)
+    cd server && npm test
+
+    # 2. Cliente web (unit, sem rede: XHR e servidor falsos)
+    haxe -cp srcweb -cp test -main webtest.VirtualFSTest --interp
+    mkdir -p .tmp && haxe test.transport.hxml && node test/webtest/run-transport-test.mjs
+
+    # 3. Smoke e2e (Chrome real + servidor real)
+    haxe renderer.web.hxml          # obrigatório: o e2e usa o build
+    cd e2e && npm test
+
+O e2e usa o Chrome do sistema (`channel: "chrome"`), então a instalação roda com
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install`.
