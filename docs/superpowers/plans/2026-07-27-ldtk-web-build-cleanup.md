@@ -375,6 +375,29 @@ git commit -m "build(web): enxuga o web-shim após remover electron/hxnodejs"
 
 ---
 
+## Implementation notes (execução)
+
+**Resultado medido:** `require()` no bundle web caiu de **28 para 3** (só os externs de UI); o `web-shim.js` caiu de **~120 para ~30 linhas**; a dependência `pako` saiu do `app/package.json`.
+
+Pontos adicionais revelados na Task 5 (o compilador só mostra em lotes, então o levantamento inicial de 8 pontos estava incompleto):
+- `import js.node.Fs` solto no `JsTools`
+- `Require.require` dos addons do CodeMirror no `TextEditor`
+- `ChildProcess.spawn` no `CommandRunner`
+- `ElectronUpdater` em `checkForUpdate`/`checkManualUpdate` (fora do `#if !web` que fechava cedo demais), no `DebugMenu` e no `EditAppSettings`
+- `electron.renderer.WebFrame.setZoomFactor`
+- `js.Node.process.platform` no `JsTools.isWindows`
+- `electron.main.App` no `Settings.isRenderer`/`getDir`
+
+Shims estendidos para absorver referências qualificadas que escapavam dos aliases: `WebElectronTools` ganhou `hideWindow`/`minimize`/`isThrottlingEnabled`/`disableThrottling`/`enableThrottling`/`getUserDataDir`; `WebFS` ganhou `copyFile`.
+
+**Simplificação em relação ao plano:** a Task 3 previa alterar `Clipboard.createSystem()` no web. Não foi necessário — o alias `CLIP → WebClipboard` já entrega a decisão de produto: o LDtk continua achando que fala com o clipboard do sistema, mas opera sobre um buffer da página.
+
+**Correção de brinde:** `simple-color-picker` é CommonJS e nunca virava global, então `window.SimpleColorPicker` era `undefined` e o `require` caía num stub vazio — o seletor de cor estava **quebrado no web desde o walking skeleton**. O `web.html` agora fornece `module`/`require` mínimos ao carregá-lo e captura o export.
+
+**Hack removido (decisão consciente):** o shim tinha um "relógio virtual" para manter o loop vivo em abas ocultas. Com o `hxnodejs` fora, `hxd.Timer` passou a usar `Date.now()` em vez de `process.hrtime`, e a versão equivalente do hack exigiria sobrescrever `Date.now` **globalmente** — o que na prática **travou o app** ao ser testado. Foi removido: era um workaround do ambiente headless (hoje coberto pelo Playwright), não uma necessidade de produto. Limitação resultante documentada no próprio shim: um editor já carregado se recupera ao voltar do segundo plano; o que não funciona é *carregar* a página numa aba oculta.
+
+**Verificação:** builds web e desktop compilam; 76 asserções verdes (VirtualFS 17, ProjectTransport 17, servidor 38, e2e 4).
+
 ## Self-Review
 
 **Spec coverage (issue #10):**
