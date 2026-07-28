@@ -1,11 +1,28 @@
 import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { imageSize } from 'image-size';
 import type { ImageRecord, StoredImage, Storage } from './Storage.js';
 
 const BLANK_PROJECT_URL = new URL('../../fixtures/blank-project.json', import.meta.url);
+
+/**
+ * Um caminho ausente é estado normal aqui (projeto novo, nível inexistente),
+ * não erro. Capturar ENOENT da própria operação evita o padrão check-then-act
+ * (`existsSync` seguido de leitura), onde o arquivo pode sumir entre as duas.
+ */
+function isNotFound(err: unknown): boolean {
+  return (err as NodeJS.ErrnoException)?.code === 'ENOENT';
+}
+
+async function orNull<T>(op: Promise<T>): Promise<T | null> {
+  try {
+    return await op;
+  } catch (err) {
+    if (isNotFound(err)) return null;
+    throw err;
+  }
+}
 
 export class DiskStorage implements Storage {
   constructor(private readonly baseDir: string) {}
@@ -40,17 +57,14 @@ export class DiskStorage implements Storage {
   }
 
   async getVersion(projectId: string): Promise<string> {
-    const path = this.versionPath(projectId);
-    if (!existsSync(path)) return '0';
-    return (await readFile(path, 'utf8')).trim() || '0';
+    const raw = await orNull(readFile(this.versionPath(projectId), 'utf8'));
+    return raw?.trim() || '0';
   }
 
   async getManifest(projectId: string): Promise<unknown> {
-    const path = this.manifestPath(projectId);
-    if (!existsSync(path)) {
-      return JSON.parse(await readFile(BLANK_PROJECT_URL, 'utf8'));
-    }
-    return JSON.parse(await readFile(path, 'utf8'));
+    const raw = await orNull(readFile(this.manifestPath(projectId), 'utf8'));
+    if (raw === null) return JSON.parse(await readFile(BLANK_PROJECT_URL, 'utf8'));
+    return JSON.parse(raw);
   }
 
   async putManifest(projectId: string, manifest: unknown): Promise<string> {
@@ -61,20 +75,20 @@ export class DiskStorage implements Storage {
 
   async listLevels(projectId: string): Promise<Record<string, unknown>> {
     const dir = this.levelsDir(projectId);
-    if (!existsSync(dir)) return {};
+    const files = await orNull(readdir(dir));
+    if (files === null) return {};
     const out: Record<string, unknown> = {};
-    for (const file of await readdir(dir)) {
+    for (const file of files) {
       if (!file.endsWith('.json')) continue;
-      const iid = file.slice(0, -'.json'.length);
-      out[iid] = JSON.parse(await readFile(join(dir, file), 'utf8'));
+      const raw = await orNull(readFile(join(dir, file), 'utf8'));
+      if (raw !== null) out[file.slice(0, -'.json'.length)] = JSON.parse(raw);
     }
     return out;
   }
 
   async getLevel(projectId: string, iid: string): Promise<unknown | null> {
-    const path = this.levelPath(projectId, iid);
-    if (!existsSync(path)) return null;
-    return JSON.parse(await readFile(path, 'utf8'));
+    const raw = await orNull(readFile(this.levelPath(projectId, iid), 'utf8'));
+    return raw === null ? null : JSON.parse(raw);
   }
 
   async putLevel(projectId: string, iid: string, level: unknown): Promise<string> {
@@ -84,9 +98,8 @@ export class DiskStorage implements Storage {
   }
 
   async deleteLevel(projectId: string, iid: string): Promise<string | null> {
-    const path = this.levelPath(projectId, iid);
-    if (!existsSync(path)) return null;
-    await rm(path);
+    const removed = await orNull(rm(this.levelPath(projectId, iid)));
+    if (removed === null) return null;
     return this.bumpVersion(projectId);
   }
   private imagesDir(projectId: string): string {
@@ -101,13 +114,20 @@ export class DiskStorage implements Storage {
 
   async listImages(projectId: string): Promise<ImageRecord[]> {
     const dir = this.imagesDir(projectId);
-    if (!existsSync(dir)) return [];
+    const files = await orNull(readdir(dir));
+    if (files === null) return [];
     const out: ImageRecord[] = [];
-    for (const file of await readdir(dir)) {
+    for (const file of files) {
       if (!file.endsWith('.meta.json')) continue;
-      const id = file.slice(0, -'.meta.json'.length);
-      const meta = JSON.parse(await readFile(join(dir, file), 'utf8'));
-      out.push({ id, name: meta.name, pxWid: meta.pxWid, pxHei: meta.pxHei });
+      const raw = await orNull(readFile(join(dir, file), 'utf8'));
+      if (raw === null) continue;
+      const meta = JSON.parse(raw);
+      out.push({
+        id: file.slice(0, -'.meta.json'.length),
+        name: meta.name,
+        pxWid: meta.pxWid,
+        pxHei: meta.pxHei,
+      });
     }
     return out;
   }
@@ -131,22 +151,22 @@ export class DiskStorage implements Storage {
 
   async getImage(projectId: string, imgId: string): Promise<StoredImage | null> {
     const dir = this.imagesDir(projectId);
-    const metaPath = join(dir, `${imgId}.meta.json`);
-    if (!existsSync(metaPath)) return null;
-    const meta = JSON.parse(await readFile(metaPath, 'utf8'));
-    const ext = this.extFor(meta.contentType);
-    const bytes = await readFile(join(dir, `${imgId}.${ext}`));
+    const rawMeta = await orNull(readFile(join(dir, `${imgId}.meta.json`), 'utf8'));
+    if (rawMeta === null) return null;
+    const meta = JSON.parse(rawMeta);
+    const bytes = await orNull(readFile(join(dir, `${imgId}.${this.extFor(meta.contentType)}`)));
+    if (bytes === null) return null;
     return { bytes, contentType: meta.contentType };
   }
 
   async deleteImage(projectId: string, imgId: string): Promise<boolean> {
     const dir = this.imagesDir(projectId);
     const metaPath = join(dir, `${imgId}.meta.json`);
-    if (!existsSync(metaPath)) return false;
-    const meta = JSON.parse(await readFile(metaPath, 'utf8'));
-    const bytesPath = join(dir, `${imgId}.${this.extFor(meta.contentType)}`);
-    if (existsSync(bytesPath)) await rm(bytesPath);
-    await rm(metaPath);
+    const rawMeta = await orNull(readFile(metaPath, 'utf8'));
+    if (rawMeta === null) return false;
+    const meta = JSON.parse(rawMeta);
+    await orNull(rm(join(dir, `${imgId}.${this.extFor(meta.contentType)}`)));
+    await orNull(rm(metaPath));
     return true;
   }
 }
