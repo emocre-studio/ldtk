@@ -12,6 +12,8 @@ export interface StoredImage {
 
 export interface Storage {
   getVersion(projectId: string): Promise<string>;
+  /** Incrementa a versão do projeto (usado por mutações que não escrevem manifesto/nível). */
+  bumpVersion(projectId: string): Promise<string>;
   getManifest(projectId: string): Promise<unknown>;
   putManifest(projectId: string, manifest: unknown): Promise<string>;
   listLevels(projectId: string): Promise<Record<string, unknown>>;
@@ -26,4 +28,5 @@ export interface Storage {
     contentType: string,
   ): Promise<ImageRecord>;
   getImage(projectId: string, imgId: string): Promise<StoredImage | null>;
+  deleteImage(projectId: string, imgId: string): Promise<boolean>;
 }

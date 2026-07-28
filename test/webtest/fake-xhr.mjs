@@ -23,6 +23,7 @@ export function makeFakeServer() {
 		const mLevel = path.match(/^\/api\/project\/([^/]+)\/level\/([^/]+)$/);
 		const mImages = path.match(/^\/api\/project\/([^/]+)\/images$/);
 		const mImage = path.match(/^\/api\/project\/([^/]+)\/images\/([^/]+)$/);
+		const mPrune = path.match(/^\/api\/project\/([^/]+)\/images\/prune$/);
 
 		const needMatch = () => {
 			if (ifMatch === undefined) return { status: 428, body: JSON.stringify({ error: "precondition", code: "precondition_required" }) };
@@ -61,6 +62,23 @@ export function makeFakeServer() {
 			if (!(mLevel[2] in server.levels))
 				return { status: 404, body: JSON.stringify({ error: "not found", code: "level_not_found" }) };
 			delete server.levels[mLevel[2]];
+			server.version++;
+			return { status: 200, body: JSON.stringify({ version: String(server.version) }) };
+		}
+		if (method === "POST" && mPrune) {
+			const bad = needMatch(); if (bad) return bad;
+			const keep = new Set((JSON.parse(body || "{}").keep || []).map(String));
+			const deleted = [];
+			for (const id of Object.keys(server.images))
+				if (!keep.has(id)) { delete server.images[id]; deleted.push(id); }
+			server.version++;
+			return { status: 200, body: JSON.stringify({ version: String(server.version), deleted }) };
+		}
+		if (method === "DELETE" && mImage) {
+			const bad = needMatch(); if (bad) return bad;
+			if (!(mImage[2] in server.images))
+				return { status: 404, body: JSON.stringify({ error: "not found", code: "image_not_found" }) };
+			delete server.images[mImage[2]];
 			server.version++;
 			return { status: 200, body: JSON.stringify({ version: String(server.version) }) };
 		}

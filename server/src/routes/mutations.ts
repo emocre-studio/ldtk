@@ -1,18 +1,8 @@
 import { Router, type Request } from 'express';
 import type { Storage } from '../storage/Storage.js';
 import { asyncHandler, HttpError } from '../errors.js';
+import { requireIfMatch } from '../ifMatch.js';
 import { safeSegment } from './validate.js';
-
-async function requireIfMatch(req: Request, storage: Storage, id: string): Promise<void> {
-  const ifMatch = req.header('If-Match');
-  if (ifMatch === undefined) {
-    throw new HttpError(428, 'precondition_required', 'If-Match header is required');
-  }
-  const current = await storage.getVersion(id);
-  if (ifMatch !== current) {
-    throw new HttpError(409, 'version_conflict', `Expected version ${current}, got ${ifMatch}`);
-  }
-}
 
 export function createMutationRouter(storage: Storage): Router {
   const router = Router();

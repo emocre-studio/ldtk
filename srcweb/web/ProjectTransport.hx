@@ -82,6 +82,47 @@ class ProjectTransport {
 		xhr.send(body);
 	}
 
+	/**
+		Ids das imagens que o projeto referencia. Varre exatamente os dois lugares
+		que o próprio LDtk consulta (Project.isCachedImageUsed): o relPath dos
+		tilesets e o bgRelPath dos níveis. Só reconhece o padrão do web,
+		`images/<id>.<ext>`; qualquer outro path (ex.: projeto vindo do desktop
+		com caminho de disco) não corresponde a uma imagem do servidor.
+	**/
+	public static function referencedImageIds(manifest:Dynamic) : Array<String> {
+		var out : Array<String> = [];
+		var seen = new Map<String,Bool>();
+
+		function add(relPath:Dynamic) {
+			if( relPath==null ) return;
+			var p = Std.string(relPath);
+			if( !StringTools.startsWith(p, "images/") ) return;
+			var file = p.substr("images/".length);
+			var dot = file.lastIndexOf(".");
+			var id = dot>0 ? file.substr(0, dot) : file;
+			if( id.length>0 && !seen.exists(id) ) {
+				seen.set(id, true);
+				out.push(id);
+			}
+		}
+
+		if( manifest.defs!=null && manifest.defs.tilesets!=null )
+			for( td in (cast manifest.defs.tilesets : Array<Dynamic>) )
+				if( td!=null ) add(td.relPath);
+
+		function scanLevels(levels:Array<Dynamic>) {
+			if( levels==null ) return;
+			for( l in levels )
+				if( l!=null ) add(l.bgRelPath);
+		}
+		scanLevels( cast manifest.levels );
+		if( manifest.worlds!=null )
+			for( w in (cast manifest.worlds : Array<Dynamic>) )
+				if( w!=null ) scanLevels( cast w.levels );
+
+		return out;
+	}
+
 	public static function flush(onOk:Void->Void, onError:String->Void) : Void {
 		var manifestJson = WebFS.fs.readString(projectVPath);
 		var manifest : Dynamic = haxe.Json.parse(manifestJson);
@@ -112,11 +153,21 @@ class ProjectTransport {
 
 		var base = "/api/project/" + projectId;
 		// Sequência: manifest, depois PUTs de nível, depois DELETEs
+		function finish() {
+			serverLevelIids = currentIids;
+			WebFS.fs.clearDirty();
+			onOk();
+		}
+		// Última etapa: informar ao servidor quais imagens seguem em uso. Ele é
+		// opaco ao JSON do projeto, então não descobriria isso sozinho.
+		function runPrune() {
+			var keep = referencedImageIds(manifest);
+			sendJson("POST", base + "/images/prune", haxe.Json.stringify({ keep: keep }),
+				(_) -> finish(), onError);
+		}
 		function runDeletes(i:Int) {
 			if( i >= deletes.length ) {
-				serverLevelIids = currentIids;
-				WebFS.fs.clearDirty();
-				onOk();
+				runPrune();
 				return;
 			}
 			var xhr = new js.html.XMLHttpRequest();

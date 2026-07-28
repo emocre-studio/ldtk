@@ -100,3 +100,26 @@ test("falha ao carregar mostra tela de erro com retry", async ({ page }) => {
 	// não abriu o editor pela metade
 	await expect(page.locator("#page.editor")).toHaveCount(0);
 });
+
+test("imagem órfã é removida do servidor no save seguinte", async ({ page }) => {
+	const id = "t-orphan";
+
+	// sobe uma imagem "por fora" (simula um import abandonado)
+	const png = Buffer.from(
+		"iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAYAAABS3WWCAAAAEklEQVR4nGP8z8Dwn4EIwDiqEAAd0wf9E4kJcgAAAABJRU5ErkJggg==",
+		"base64",
+	);
+	const form = new FormData();
+	form.append("file", new Blob([png], { type: "image/png" }), "orphan.png");
+	const up = await fetch(`${API}/api/project/${id}/images`, { method: "POST", body: form });
+	expect(up.status).toBe(201);
+	expect((await bundle(id)).images).toHaveLength(1);
+
+	// o editor abre um projeto que NÃO referencia essa imagem e salva
+	await openEditor(page, id);
+	await save(page);
+	await expect(page.locator(".notification", { hasText: "Saved to server" })).toBeAttached();
+
+	// o prune do flush removeu a órfã
+	expect((await bundle(id)).images).toHaveLength(0);
+});

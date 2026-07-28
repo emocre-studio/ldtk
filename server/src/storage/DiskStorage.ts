@@ -30,7 +30,7 @@ export class DiskStorage implements Storage {
     return join(this.levelsDir(projectId), `${iid}.json`);
   }
 
-  private async bump(projectId: string): Promise<string> {
+  async bumpVersion(projectId: string): Promise<string> {
     const parsed = parseInt(await this.getVersion(projectId), 10);
     const current = Number.isFinite(parsed) ? parsed : 0;
     const next = String(current + 1);
@@ -56,7 +56,7 @@ export class DiskStorage implements Storage {
   async putManifest(projectId: string, manifest: unknown): Promise<string> {
     await mkdir(this.projectDir(projectId), { recursive: true });
     await writeFile(this.manifestPath(projectId), JSON.stringify(manifest), 'utf8');
-    return this.bump(projectId);
+    return this.bumpVersion(projectId);
   }
 
   async listLevels(projectId: string): Promise<Record<string, unknown>> {
@@ -80,14 +80,14 @@ export class DiskStorage implements Storage {
   async putLevel(projectId: string, iid: string, level: unknown): Promise<string> {
     await mkdir(this.levelsDir(projectId), { recursive: true });
     await writeFile(this.levelPath(projectId, iid), JSON.stringify(level), 'utf8');
-    return this.bump(projectId);
+    return this.bumpVersion(projectId);
   }
 
   async deleteLevel(projectId: string, iid: string): Promise<string | null> {
     const path = this.levelPath(projectId, iid);
     if (!existsSync(path)) return null;
     await rm(path);
-    return this.bump(projectId);
+    return this.bumpVersion(projectId);
   }
   private imagesDir(projectId: string): string {
     return join(this.projectDir(projectId), 'images');
@@ -137,5 +137,16 @@ export class DiskStorage implements Storage {
     const ext = this.extFor(meta.contentType);
     const bytes = await readFile(join(dir, `${imgId}.${ext}`));
     return { bytes, contentType: meta.contentType };
+  }
+
+  async deleteImage(projectId: string, imgId: string): Promise<boolean> {
+    const dir = this.imagesDir(projectId);
+    const metaPath = join(dir, `${imgId}.meta.json`);
+    if (!existsSync(metaPath)) return false;
+    const meta = JSON.parse(await readFile(metaPath, 'utf8'));
+    const bytesPath = join(dir, `${imgId}.${this.extFor(meta.contentType)}`);
+    if (existsSync(bytesPath)) await rm(bytesPath);
+    await rm(metaPath);
+    return true;
   }
 }

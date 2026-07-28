@@ -32,6 +32,13 @@ detectado por versão/ETag por projeto. Sem autenticação no MVP.
 - `DELETE /api/project/:id/level/:iid` (header `If-Match: <version>`) → `{ version }`
 - `POST /api/project/:id/images`  (multipart `file`) → `{ id, name, pxWid, pxHei, url }`
 - `GET  /api/project/:id/images/:imgId` → bytes da imagem
+- `DELETE /api/project/:id/images/:imgId` (header `If-Match: <version>`) → `{ version }`
+- `POST /api/project/:id/images/prune`    (header `If-Match: <version>`) → `{ version, deleted }`
+
+O `prune` recebe `{ "keep": ["img_a", ...] }` e apaga toda imagem do projeto fora
+da lista. O servidor não interpreta o JSON do projeto: quem sabe quais imagens
+estão em uso é o editor, que envia a lista ao salvar. Upload não altera a versão;
+`DELETE` e `prune` alteram.
 
 ### Códigos de erro
 

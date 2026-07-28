@@ -44,4 +44,23 @@ describe('DiskStorage images', () => {
   it('returns null for an unknown image', async () => {
     expect(await storage.getImage('p1', 'nope')).toBeNull();
   });
+
+  it('deletes an image and its metadata', async () => {
+    const rec = await storage.putImage('p1', png, 'tiles.png', 'image/png');
+    expect(await storage.deleteImage('p1', rec.id)).toBe(true);
+    expect(await storage.getImage('p1', rec.id)).toBeNull();
+    expect(await storage.listImages('p1')).toEqual([]);
+  });
+
+  it('returns false when deleting an unknown image', async () => {
+    expect(await storage.deleteImage('p1', 'nope')).toBe(false);
+  });
+
+  it('deleting one image leaves the others intact', async () => {
+    const a = await storage.putImage('p1', png, 'a.png', 'image/png');
+    const b = await storage.putImage('p1', png, 'b.png', 'image/png');
+    await storage.deleteImage('p1', a.id);
+    const left = await storage.listImages('p1');
+    expect(left.map((r) => r.id)).toEqual([b.id]);
+  });
 });
