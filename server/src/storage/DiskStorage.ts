@@ -138,4 +138,15 @@ export class DiskStorage implements Storage {
     const bytes = await readFile(join(dir, `${imgId}.${ext}`));
     return { bytes, contentType: meta.contentType };
   }
+
+  async deleteImage(projectId: string, imgId: string): Promise<boolean> {
+    const dir = this.imagesDir(projectId);
+    const metaPath = join(dir, `${imgId}.meta.json`);
+    if (!existsSync(metaPath)) return false;
+    const meta = JSON.parse(await readFile(metaPath, 'utf8'));
+    const bytesPath = join(dir, `${imgId}.${this.extFor(meta.contentType)}`);
+    if (existsSync(bytesPath)) await rm(bytesPath);
+    await rm(metaPath);
+    return true;
+  }
 }

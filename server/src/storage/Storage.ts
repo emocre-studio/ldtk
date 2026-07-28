@@ -26,4 +26,5 @@ export interface Storage {
     contentType: string,
   ): Promise<ImageRecord>;
   getImage(projectId: string, imgId: string): Promise<StoredImage | null>;
+  deleteImage(projectId: string, imgId: string): Promise<boolean>;
 }
