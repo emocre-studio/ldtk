@@ -236,7 +236,7 @@ class DebugMenu extends ui.modal.ContextMenu {
 					cb: ()->{
 						App.ME.settings.v.lastKnownVersion = null;
 						App.ME.settings.save();
-						dn.js.ElectronUpdater.emulate();
+						#if !web dn.js.ElectronUpdater.emulate(); #end
 					}
 				});
 

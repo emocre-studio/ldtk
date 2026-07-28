@@ -74,6 +74,9 @@ class CommandRunner extends ui.modal.Dialog {
 		print("Executing: " + cmd.command, White);
 		separator();
 
+		#if web
+		return;
+		#else
 		var proc = js.node.ChildProcess.spawn(name, args, {cwd: p.getProjectDir()});
 		proc.stdout.on("data", out->print(out));
 		proc.stderr.on("data", out->print(out, 0xffcc00));
@@ -99,6 +102,7 @@ class CommandRunner extends ui.modal.Dialog {
 			needManualClosing = true;
 			proc.kill();
 		});
+		#end
 	}
 
 	private static function parseCommandToArray(argString:String) {

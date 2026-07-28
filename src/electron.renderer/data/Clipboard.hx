@@ -51,7 +51,7 @@ class Clipboard {
 			return false;
 
 		// Read system clipboard
-		var raw = try electron.Clipboard.readText() catch(_) null;
+		var raw = try CLIP.readText() catch(_) null;
 		if( _lastKnownSys==raw )
 			return false;
 		_lastKnownSys = raw;
@@ -117,7 +117,7 @@ class Clipboard {
 				jsonStr,
 			];
 			var str = parts.join(SYS_SEP);
-			electron.Clipboard.writeText(str);
+			CLIP.writeText(str);
 		}
 
 		N.copied(name);
@@ -125,7 +125,7 @@ class Clipboard {
 
 	public function copyStr(v:String) {
 		if( linkToSystem ) {
-			electron.Clipboard.writeText(v);
+			CLIP.writeText(v);
 			clearInternal();
 		}
 

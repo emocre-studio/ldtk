@@ -1,4 +1,6 @@
+#if !web
 import electron.renderer.IpcRenderer;
+#end
 #if editor
 import EditorTypes;
 #end
@@ -313,7 +315,11 @@ class Settings {
 	#end
 
 	static inline function isRenderer() {
+		#if web
+		return true; // no web só existe o "renderer"
+		#else
 		return electron.main.App==null;
+		#end
 	}
 
 	public function getAppZoomFactor() : Float {
@@ -329,11 +335,15 @@ class Settings {
 	}
 
 	public static function getDir() {
+		#if web
+		var path = web.WebElectronTools.getUserDataDir();
+		#else
 		var path = isRenderer()
 			?	#if debug	dn.js.ElectronTools.getAppResourceDir()
 				#else		dn.js.ElectronTools.getUserDataDir() #end
 			:	#if debug	electron.main.App.getAppPath();
 				#else		electron.main.App.getPath("userData"); #end
+		#end
 		return dn.FilePath.fromDir( path+"/settings" ).useSlashes().directory;
 	}
 

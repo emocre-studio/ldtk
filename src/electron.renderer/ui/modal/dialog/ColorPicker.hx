@@ -32,7 +32,7 @@ class ColorPicker extends ui.modal.Dialog {
 
 		// Paste from clipboard
 		jContent.find(".paste").click( (ev:js.jquery.Event)->{
-			var cb = electron.Clipboard.readText();
+			var cb = CLIP.readText();
 			if( C.isValidHex(cb) ) {
 				picker.setColor( C.sanitizeHexStr( cb ) );
 				N.quick("Pasted color");
@@ -42,7 +42,7 @@ class ColorPicker extends ui.modal.Dialog {
 
 		// Copy to clipboard
 		jContent.find(".copy").click( (ev:js.jquery.Event)->{
-			electron.Clipboard.writeText( picker.getHexString() );
+			CLIP.writeText( picker.getHexString() );
 			ev.getThis().addClass("done");
 			N.copied();
 			updatePaste();
@@ -168,9 +168,9 @@ class ColorPicker extends ui.modal.Dialog {
 
 	function updatePaste() {
 		var jPaste = jContent.find(".paste");
-		if( C.isValidHex( electron.Clipboard.readText() ) ) {
+		if( C.isValidHex( CLIP.readText() ) ) {
 			jPaste.addClass("enabled");
-			jPaste.css({ backgroundColor: C.sanitizeHexStr(electron.Clipboard.readText()) });
+			jPaste.css({ backgroundColor: C.sanitizeHexStr(CLIP.readText()) });
 		}
 		else
 			jPaste.removeClass("enabled");

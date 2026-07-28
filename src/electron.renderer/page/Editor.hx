@@ -1855,7 +1855,7 @@ class Editor extends Page {
 			#else
 			var oldDir = project.getProjectDir();
 
-			dn.js.ElectronDialogs.saveFileAs(["."+Const.FILE_EXTENSION, ".json"], project.getProjectDir(), function(filePath:String) {
+			ED.saveFileAs(["."+Const.FILE_EXTENSION, ".json"], project.getProjectDir(), function(filePath:String) {
 				project.filePath.parseFilePath( filePath );
 				var newDir = project.getProjectDir();
 				App.LOG.fileOp("Remap project paths: "+oldDir+" => "+newDir);
@@ -1972,7 +1972,7 @@ class Editor extends Page {
 
 
 	function onBackupRelink() {
-		dn.js.ElectronDialogs.openFile(project.filePath.directory, (f)->{
+		ED.openFile(project.filePath.directory, (f)->{
 			try {
 				var raw = NT.readFileString(f);
 				var json : ldtk.Json.ProjectJson = haxe.Json.parse(raw);
@@ -2024,7 +2024,7 @@ class Editor extends Page {
 				[{
 					label: "Locate original project",
 					cb: ()->{
-						dn.js.ElectronDialogs.openFile(project.filePath.directory, (f)->{
+						ED.openFile(project.filePath.directory, (f)->{
 							project.backupOriginalFile = dn.FilePath.fromFile(f);
 							onBackupRestore();
 						});

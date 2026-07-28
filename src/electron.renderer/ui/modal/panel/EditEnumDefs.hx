@@ -26,7 +26,7 @@ class EditEnumDefs extends ui.modal.Panel {
 				subText: L.t._('Expected format:\n - One enum per line\n - Each line: "MyEnumId : value1, value2, value3"'),
 				cb: ()->{
 					var path = settings.getUiDir(project, "ImportEnumText", project.getProjectDir());
-					dn.js.ElectronDialogs.openFile([".txt"], path, function(absPath:String) {
+					ED.openFile([".txt"], path, function(absPath:String) {
 						absPath = StringTools.replace(absPath,"\\","/");
 						settings.storeUiDir(project, "ImportEnumText", dn.FilePath.extractDirectoryWithoutSlash(absPath, true));
 						switch dn.FilePath.extractExtension(absPath,true) {
@@ -46,7 +46,7 @@ class EditEnumDefs extends ui.modal.Panel {
 				subText: L.t._('Accepted formats:\n {\n  "MyEnum1": "a,b,c",\n  "MyEnum2": "a b c",\n  "MyEnum3": ["a","b","c"]\n }'),
 				cb: ()->{
 					var path = settings.getUiDir(project, "ImportEnumText", project.getProjectDir());
-					dn.js.ElectronDialogs.openFile([".json"], path, function(absPath:String) {
+					ED.openFile([".json"], path, function(absPath:String) {
 						absPath = StringTools.replace(absPath,"\\","/");
 						settings.storeUiDir(project, "ImportEnumText", dn.FilePath.extractDirectoryWithoutSlash(absPath, true));
 						switch dn.FilePath.extractExtension(absPath,true) {
@@ -65,7 +65,7 @@ class EditEnumDefs extends ui.modal.Panel {
 				label:L.t._("Haxe source code"),
 				cb: ()->{
 					var path = settings.getUiDir(project, "ImportEnumHaxe", project.getProjectDir());
-					dn.js.ElectronDialogs.openFile([".hx"], path, function(absPath:String) {
+					ED.openFile([".hx"], path, function(absPath:String) {
 						absPath = StringTools.replace(absPath,"\\","/");
 						settings.storeUiDir(project, "ImportEnumHaxe", dn.FilePath.extractDirectoryWithoutSlash(absPath, true));
 						if( dn.FilePath.extractExtension(absPath,true) != "hx" )
@@ -82,7 +82,7 @@ class EditEnumDefs extends ui.modal.Panel {
 				label:L.t._("CastleDB"),
 				cb: ()->{
 					var path = settings.getUiDir(project, "ImportEnumCdb", project.getProjectDir());
-					dn.js.ElectronDialogs.openFile([".cdb"], path, function(absPath:String) {
+					ED.openFile([".cdb"], path, function(absPath:String) {
 						absPath = StringTools.replace(absPath,"\\","/");
 						settings.storeUiDir(project, "ImportEnumCdb", dn.FilePath.extractDirectoryWithoutSlash(absPath, true));
 						if( dn.FilePath.extractExtension(absPath,true) != "cdb" )

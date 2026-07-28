@@ -41,11 +41,11 @@ class TextEditor extends ui.modal.Dialog {
 
 		// Load extra addons
 		if( mode==LangXml ) {
-			js.node.Require.require('codemirror/addon/edit/closetag.js');
+			#if !web js.node.Require.require('codemirror/addon/edit/closetag.js'); #end
 			cm.setOption("autoCloseTags", true);
 		}
 		else {
-			js.node.Require.require('codemirror/addon/edit/closebrackets.js');
+			#if !web js.node.Require.require('codemirror/addon/edit/closebrackets.js'); #end
 			cm.setOption("autoCloseBrackets", true);
 		}
 
@@ -94,7 +94,7 @@ class TextEditor extends ui.modal.Dialog {
 
 
 		// Load language mode
-		js.node.Require.require('codemirror/mode/$modeId/$modeId.js');
+		#if !web js.node.Require.require('codemirror/mode/$modeId/$modeId.js'); #end
 		var out : Dynamic = {
 			name: modeId,
 		}

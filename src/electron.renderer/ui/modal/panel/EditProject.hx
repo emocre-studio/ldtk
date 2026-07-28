@@ -181,7 +181,7 @@ class EditProject extends ui.modal.Panel {
 				if( !NT.fileExists(absPath) )
 					absPath = project.filePath.full;
 
-				dn.js.ElectronDialogs.openDir(absPath, (dirPath)->{
+				ED.openDir(absPath, (dirPath)->{
 					var fp = dn.FilePath.fromDir(dirPath);
 					fp.useSlashes();
 					fp.makeRelativeTo(project.filePath.directory);

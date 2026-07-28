@@ -67,4 +67,9 @@ class WebFS {
 	public static function dirContainsAnyFile(path:String) : Bool return fs.dirHasAnyFile(path);
 	public static function checkPermissions(path:String, read:Bool, write:Bool, ?exec:Bool) : Bool return true;
 	public static function isWindows() : Bool return false;
+
+	public static function copyFile(from:String, to:String) : Void {
+		if( fs.exists(from) )
+			fs.writeBytes(to, fs.readBytes(from));
+	}
 }

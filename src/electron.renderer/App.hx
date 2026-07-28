@@ -58,7 +58,7 @@ class App extends dn.Process {
 		LOG.add("BOOT","ExePath: "+JsTools.getExeDir());
 		LOG.add("BOOT","Assets: "+JsTools.getAssetsDir());
 		LOG.add("BOOT","ExtraFiles: "+JsTools.getExtraFilesDir());
-		LOG.add("BOOT","CWD: "+Sys.getCwd());
+		LOG.add("BOOT","CWD: "+ #if web js.Browser.location.href #else Sys.getCwd() #end);
 		LOG.add("BOOT","Display: "+ET.getScreenWidth()+"x"+ET.getScreenHeight());
 
 		// App arguments
@@ -404,7 +404,6 @@ class App extends dn.Process {
 		// Check now
 		checkForUpdate();
 	}
-	#end
 
 	public function checkForUpdate() {
 		jBody.find("#updateInstall").empty().hide();
@@ -439,7 +438,7 @@ class App extends dn.Process {
 				pendingUpdate = { ver:latest.full, github:false }
 
 				showUpdateButton(latest.full, "world", "Update available", false, ()->{
-					electron.Shell.openExternal(Const.DOWNLOAD_URL);
+					SHELL.openExternal(Const.DOWNLOAD_URL);
 				});
 			}
 			else {
@@ -448,6 +447,7 @@ class App extends dn.Process {
 			}
 		});
 	}
+	#end
 
 
 	function showUpdateButton(version:String, icon:String, label:String, checkUnsaved=true, allowCancel=true, proceed:Void->Void) {
@@ -706,10 +706,10 @@ class App extends dn.Process {
 				App.ME.exit();
 
 			case C_HideApp:
-				dn.js.ElectronTools.hideWindow();
+				ET.hideWindow();
 
 			case C_MinimizeApp:
-				dn.js.ElectronTools.minimize();
+				ET.minimize();
 
 			case C_ToggleFullscreen:
 				var isFullScreen = ET.isFullScreen();
@@ -1164,7 +1164,7 @@ class App extends dn.Process {
 			debugPre('Electron: ${Const.getElectronVersion()}');
 			debugPre('Detected OS: '+(isWindows()?"Windows":isMac()?"macOs":isLinux()?"Linux":"Unknown ("+ #if web "web" #else js.node.Os.platform() #end +")"));
 			debugPre('FPS=${hxd.System.fpsLimit<=0 ? "100":Std.string(M.round(100*hxd.System.fpsLimit/60))}%');
-			debugPre('ElectronThrottling=${dn.js.ElectronTools.isThrottlingEnabled()}');
+			debugPre('ElectronThrottling=${ET.isThrottlingEnabled()}');
 			debugPre("electronZoom="+M.pretty(ET.getZoom(),2));
 			if( Editor.ME!=null ) {
 				debugPre("mouse="+Editor.ME.getMouse());

@@ -18,4 +18,12 @@ class WebElectronTools {
 	public static function exitApp(?code:Int) : Void {}
 	public static function openDevTools() : Void {}
 	public static function isDevToolsOpened() : Bool return false;
+
+	// chamados por Progress/App via ET (no browser não há janela nativa a controlar)
+	public static function hideWindow() : Void {}
+	public static function minimize() : Void {}
+	public static function isThrottlingEnabled() : Bool return false;
+	public static function disableThrottling() : Void {}
+	public static function enableThrottling() : Void {}
+	public static function getUserDataDir() : String return "/";
 }

@@ -2,7 +2,9 @@ package misc;
 
 import sortablejs.*;
 import sortablejs.Sortable;
+#if !web
 import js.node.Fs;
+#end
 
 typedef InternalSortableOptions = {
 	var ?onlyDraggables: Bool;
@@ -713,14 +715,14 @@ class JsTools {
 			link.click( function(ev:js.jquery.Event) {
 				ev.preventDefault();
 				ev.stopPropagation();
-				electron.Shell.openExternal(url);
+				SHELL.openExternal(url);
 				N.msg("Opening url...");
 			});
 			link.on("auxclick", (ev:js.jquery.Event)->{
 				switch ev.button {
 					case 1:
 						ev.preventDefault();
-						electron.Shell.openExternal(url);
+						SHELL.openExternal(url);
 
 					case 2:
 						var ctx = new ui.modal.ContextMenu(ev);
@@ -1100,7 +1102,11 @@ class JsTools {
 
 
 	public static function isWindows() {
+		#if web
+		return js.Browser.navigator.platform.toLowerCase().indexOf("win")==0;
+		#else
 		return js.Node.process.platform.toLowerCase().indexOf("win")==0;
+		#end
 	}
 
 	public static function removeClassReg(jElem:js.jquery.JQuery, reg:EReg) {
@@ -1389,7 +1395,7 @@ class JsTools {
 				defPath = project.getProjectDir();
 			var path = App.ME.settings.getUiDir(project, "PickImage", defPath);
 
-			dn.js.ElectronDialogs.openFile([".png", ".gif", ".jpg", ".jpeg", ".aseprite", ".ase"], path, function(absPath) {
+			ED.openFile([".png", ".gif", ".jpg", ".jpeg", ".aseprite", ".ase"], path, function(absPath) {
 				App.ME.settings.storeUiDir(project, "PickImage", dn.FilePath.extractDirectoryWithoutSlash(absPath,true));
 				var relPath = project.makeRelativeFilePath(absPath);
 				_pick(relPath);
