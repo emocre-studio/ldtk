@@ -5,10 +5,21 @@ import { createProjectRouter } from './routes/bundle.js';
 import { createMutationRouter } from './routes/mutations.js';
 import { createImageRouter } from './routes/images.js';
 import { errorMiddleware } from './errors.js';
+import { isOriginAllowed } from './cors.js';
 
-export function createApp(storage: Storage): Express {
+export interface AppOptions {
+  /** Origens permitidas; `null`/ausente usa o default (apenas localhost). */
+  corsOrigins?: string[] | null;
+}
+
+export function createApp(storage: Storage, opts: AppOptions = {}): Express {
+  const allowList = opts.corsOrigins ?? null;
   const app = express();
-  app.use(cors());
+  app.use(
+    cors({
+      origin: (origin, cb) => cb(null, isOriginAllowed(origin ?? undefined, allowList)),
+    }),
+  );
   app.use(express.json({ limit: '64mb' }));
 
   app.get('/health', (_req, res) => {
