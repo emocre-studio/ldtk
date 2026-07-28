@@ -9,6 +9,20 @@ detectado por versão/ETag por projeto. Sem autenticação no MVP.
     npm install
     STORAGE_DIR=./storage PORT=4000 npm start   # ou: npm run dev
 
+### Variáveis de ambiente
+
+| Variável | Default | Descrição |
+|---|---|---|
+| `PORT` | `4000` | porta de escuta |
+| `STORAGE_DIR` | `./storage` | diretório dos projetos |
+| `BIND_HOST` | `127.0.0.1` | interface de escuta |
+| `CORS_ORIGINS` | localhost | origens permitidas, separadas por vírgula |
+
+> **Sem autenticação.** Este servidor não autentica ninguém: quem alcança a
+> porta lê, modifica e apaga qualquer projeto. Por isso ele escuta apenas em
+> `127.0.0.1` por padrão. Só use `BIND_HOST` para expor se houver um proxy
+> autenticando na frente — o servidor avisa no log quando é iniciado exposto.
+
 ## API
 
 - `GET  /health` → `{ ok: true }`

@@ -10,7 +10,12 @@ const SAFE_SEGMENT = /^[A-Za-z0-9_-]+$/;
  */
 export function safeSegment(name: string, kind: string): string {
   if (!SAFE_SEGMENT.test(name)) {
-    throw new HttpError(400, 'invalid_id', `Invalid ${kind}: ${name}`);
+    // Sem ecoar `name`: refletir input do cliente na resposta é hábito ruim.
+    throw new HttpError(
+      400,
+      'invalid_id',
+      `Invalid ${kind}: expected letters, digits, hyphen or underscore`,
+    );
   }
   return name;
 }

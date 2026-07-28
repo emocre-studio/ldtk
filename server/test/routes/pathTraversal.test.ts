@@ -39,4 +39,12 @@ describe('path traversal protection', () => {
       .send({ n: 1 });
     expect(res.status).toBe(200);
   });
+
+  it('does not echo the rejected value back to the client', async () => {
+    const res = await request(app)
+      .get(`/api/project/${encodeURIComponent('../../secret')}/bundle`);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('invalid_id');
+    expect(JSON.stringify(res.body)).not.toContain('secret');
+  });
 });
