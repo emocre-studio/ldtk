@@ -7,7 +7,21 @@
 	<!-- Browser globals for libs the renderer `require()`s -->
 	<script type="text/javascript" src="assets/js/vendor/codemirror.js"></script>
 	<script type="text/javascript" src="assets/js/vendor/sortable.js"></script>
-	<script type="text/javascript" src="assets/js/vendor/pako.js"></script>
+	<!-- simple-color-picker é CommonJS: damos a ele um `module`/`require` mínimos
+	     e capturamos o export como global. -->
+	<script>
+		window.module = { exports:{} };
+		window.require = function(n){
+			if( n==="insert-css" )
+				return function(css){ var s=document.createElement("style"); s.textContent=css; document.head.appendChild(s); };
+			return {};
+		};
+	</script>
+	<script type="text/javascript" src="assets/js/vendor/simple-color-picker.js"></script>
+	<script>
+		window.SimpleColorPicker = window.module.exports;
+		delete window.module;
+	</script>
 	<script type="text/javascript" src="assets/js/web-shim.js"></script>
 	<link rel="stylesheet" href="assets/css/app.min.css"/>
 	<link rel="stylesheet" href="assets/css/codemirror/codemirror.css"/>
